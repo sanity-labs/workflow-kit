@@ -1,5 +1,6 @@
 import {Button, Card, Dialog, Flex, Heading, Stack, Text} from '@sanity/ui'
-import {useEffect, useMemo, useState} from 'react'
+import {useCallback, useEffect, useMemo, useState} from 'react'
+import {useRouter} from 'sanity/router'
 
 import type {
   WorkflowTransitionDialogUser,
@@ -41,6 +42,20 @@ function getVisibleTasks(
     })
 }
 
+function buildTaskViewPath(taskId: string): string | undefined {
+  if (typeof window === 'undefined') return undefined
+
+  try {
+    const url = new URL(window.location.href)
+    url.searchParams.set('sidebar', 'tasks')
+    url.searchParams.set('viewMode', 'edit')
+    url.searchParams.set('selectedTask', taskId)
+    return `${url.pathname}${url.search}`
+  } catch {
+    return undefined
+  }
+}
+
 export function WorkflowTransitionGatedDialogContent({
   currentUserCanOverride,
   isSubmitting = false,
@@ -52,6 +67,7 @@ export function WorkflowTransitionGatedDialogContent({
   tasks,
   users = [],
 }: WorkflowTransitionGatedDialogContentProps) {
+  const router = useRouter()
   const [overrides, setOverrides] = useState<Map<string, 'closed' | 'open'>>(new Map())
 
   useEffect(() => {
@@ -62,6 +78,14 @@ export function WorkflowTransitionGatedDialogContent({
   const remainingTaskCount = visibleTasks.length
   const allTasksClosed = remainingTaskCount === 0
   const resolvedSubmittingText = submittingText ?? `Moving to ${targetStageTitle}...`
+  const handleViewTask = useCallback(
+    (taskId: string) => {
+      const path = buildTaskViewPath(taskId)
+      if (!path) return
+      router.navigateUrl({path})
+    },
+    [router],
+  )
 
   return (
     <Stack padding={4} space={4}>
@@ -126,6 +150,7 @@ export function WorkflowTransitionGatedDialogContent({
               }}
               task={task}
               user={assignee}
+              onViewTask={() => handleViewTask(task._id)}
             />
           )
         })}

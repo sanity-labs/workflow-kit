@@ -95,20 +95,25 @@ function WorkflowTransitionTaskCard({
           </Flex>
         ) : null}
       </Stack>
-
-      {trailing ? <Box style={{flexShrink: 0}}>{trailing}</Box> : null}
     </Flex>
   )
 
   return (
     <Card padding={3} radius={2} border tone="neutral">
-      {asLabel ? (
-        <Box as="label" style={{display: 'block', cursor: 'pointer'}}>
-          {content}
-        </Box>
-      ) : (
-        content
-      )}
+      <Flex align="center" gap={2}>
+        {asLabel ? (
+          <Box as="label" style={{display: 'block', cursor: 'pointer', flex: 1, minWidth: 0}}>
+            {content}
+          </Box>
+        ) : (
+          <Box style={{flex: 1, minWidth: 0}}>{content}</Box>
+        )}
+        {trailing ? (
+          <Flex align="center" gap={2} style={{flexShrink: 0}}>
+            {trailing}
+          </Flex>
+        ) : null}
+      </Flex>
     </Card>
   )
 }
@@ -144,6 +149,25 @@ function WorkflowTransitionDueDateBadge({dueDate}: {dueDate: string}) {
   const tone = label.startsWith('overdue') || label === 'due today' ? 'caution' : 'primary'
 
   return <IconPill Icon={Clock3} label={label} tone={tone} />
+}
+
+function AssigneePill({user}: {user?: WorkflowTransitionDialogUser}) {
+  return (
+    <Flex
+      align="center"
+      gap={1}
+      style={{
+        border: '1px solid var(--card-badge-primary-bg-color)',
+        borderRadius: '9999px',
+        color: 'var(--card-badge-primary-fg-color)',
+        minHeight: '1.5em',
+        padding: '0.125rem 0.5rem',
+      }}
+    >
+      {user ? <Avatar src={user.imageUrl} size={0} style={{borderRadius: '9999px'}} /> : null}
+      <Text size={1}>{user?.displayName || 'Unassigned'}</Text>
+    </Flex>
+  )
 }
 
 export interface WorkflowTransitionTaskTemplateRowProps {
@@ -213,6 +237,7 @@ export interface WorkflowTransitionTaskInstanceRowProps {
   onToggleClosed?: () => void
   task: WorkflowTransitionTaskRow
   user?: WorkflowTransitionDialogUser
+  onViewTask?: () => void
 }
 
 export function WorkflowTransitionTaskInstanceRow({
@@ -220,6 +245,7 @@ export function WorkflowTransitionTaskInstanceRow({
   onToggleClosed,
   task,
   user,
+  onViewTask,
 }: WorkflowTransitionTaskInstanceRowProps) {
   const isOpen = task.status === 'open'
 
@@ -228,17 +254,18 @@ export function WorkflowTransitionTaskInstanceRow({
       asLabel={currentUserCanOverride}
       title={task.title}
       trailing={
-        currentUserCanOverride ? (
-          <Checkbox checked={!isOpen} onChange={onToggleClosed} style={{flexShrink: 0}} />
-        ) : null
+        <>
+          {onViewTask ? (
+            <Button fontSize={1} mode="ghost" onClick={onViewTask} padding={2} text="View Task" />
+          ) : null}
+          {currentUserCanOverride ? (
+            <Checkbox checked={!isOpen} onChange={onToggleClosed} style={{flexShrink: 0}} />
+          ) : null}
+        </>
       }
     >
       {task.dueDate ? <WorkflowTransitionDueDateBadge dueDate={task.dueDate} /> : null}
-
-      <Flex gap={1} align="center">
-        <Avatar src={user?.imageUrl} size={0} style={{borderRadius: '9999px', flexShrink: 0}} />
-        <Text size={1}>{user?.displayName || 'Unassigned'}</Text>
-      </Flex>
+      <AssigneePill user={user} />
     </WorkflowTransitionTaskCard>
   )
 }
