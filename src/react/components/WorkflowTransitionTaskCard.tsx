@@ -256,7 +256,7 @@ export function WorkflowTransitionTaskInstanceRow({
       trailing={
         <>
           {onViewTask ? (
-            <Button fontSize={1} mode="ghost" onClick={onViewTask} padding={2} text="View Task" />
+            <Button fontSize={1} onClick={onViewTask} padding={2} text="View Task" tone="primary" />
           ) : null}
           {currentUserCanOverride ? (
             <Checkbox checked={!isOpen} onChange={onToggleClosed} style={{flexShrink: 0}} />
