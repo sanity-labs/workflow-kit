@@ -1,0 +1,104 @@
+{
+  "name": "sanity-workflow-kit",
+  "version": "1.0.0",
+  "description": "Reusable workflow engine and UI for Sanity-powered applications.",
+  "keywords": [
+    "react",
+    "sanity",
+    "workflow"
+  ],
+  "homepage": "https://github.com/sanity-io/sanetti-3#readme",
+  "bugs": {
+    "url": "https://github.com/sanity-io/sanetti-3/issues"
+  },
+  "license": "MIT",
+  "author": "Sam Hemingway <sam.hemingway@sanity.io>",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/sanity-io/sanetti-3.git"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./react": {
+      "source": "./src/react.ts",
+      "default": "./src/react.ts"
+    },
+    "./studio": {
+      "source": "./src/studio.ts",
+      "default": "./src/studio.ts"
+    },
+    "./engine": {
+      "source": "./src/engine.ts",
+      "default": "./src/engine.ts"
+    },
+    "./types": {
+      "source": "./src/types.ts",
+      "default": "./src/types.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./react": {
+        "import": "./dist/react.js",
+        "default": "./dist/react.js"
+      },
+      "./studio": {
+        "import": "./dist/studio.js",
+        "default": "./dist/studio.js"
+      },
+      "./engine": {
+        "import": "./dist/engine.js",
+        "default": "./dist/engine.js"
+      },
+      "./types": {
+        "import": "./dist/types.js",
+        "default": "./dist/types.js"
+      },
+      "./package.json": "./package.json"
+    },
+    "types": "./dist/index.d.ts"
+  },
+  "scripts": {
+    "build": "pkg-utils build --strict --check --clean",
+    "lint": "oxlint .",
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "@portabletext/react": "^5.0.0",
+    "lucide-react": "^0.577.0"
+  },
+  "devDependencies": {
+    "@sanity/pkg-utils": "^10.4.13",
+    "@types/react": "^19.2.14",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "sanity": "^5.20.0",
+    "styled-components": "^6.4.0",
+    "typescript": "^6.0.2"
+  },
+  "peerDependencies": {
+    "@sanity/ui": "^3.1.11",
+    "react": "^19",
+    "sanity": ">=5 <6",
+    "styled-components": "^6"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
