@@ -48,6 +48,7 @@ function IconPill({
         background,
         color: foreground,
         padding: '0.125rem 0.5rem',
+        minHeight: '1.5em',
       }}
     >
       <Icon size={12} />
