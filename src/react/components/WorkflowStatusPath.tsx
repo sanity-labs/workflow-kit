@@ -467,16 +467,16 @@ export function WorkflowStatusPath({
                 <Tooltip
                   key={stage.slug || `${title}-${index}`}
                   content={
-                    <Box padding={2}>
-                      <Text size={1}>
-                        {isForwardOnlyDisabled && workflow.forwardOnly && state === 'completed'
-                          ? 'This workflow only allows forward progression'
-                          : title}
-                      </Text>
-                    </Box>
+                    <Text size={1}>
+                      {isForwardOnlyDisabled && workflow.forwardOnly && state === 'completed'
+                        ? 'This workflow only allows forward progression'
+                        : `Move to ${title}`}
+                    </Text>
                   }
                   portal
-                  placement="top"
+                  placement="bottom"
+                  animate
+                  delay={300}
                 >
                   <ChevronSegment
                     $bgColor={color}
