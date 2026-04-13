@@ -12,6 +12,7 @@ export {
 } from './engine/roleMatching'
 export {
   evaluateWorkflowStageGating,
+  subscribeWorkflowStageGating,
   type WorkflowStageGatingResult,
   type WorkflowStageGatingTask,
 } from './engine/stageGating'

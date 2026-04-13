@@ -6,7 +6,11 @@ import {set, useClient, useCurrentUser, useFormValue} from 'sanity'
 
 import {canUseOffRampStage, getOffRampDisabledTitle} from '../../../engine/roleAccess'
 import {workflowRoleSlugMatches} from '../../../engine/roleMatching'
-import {evaluateWorkflowStageGating} from '../../../engine/stageGating'
+import {
+  evaluateWorkflowStageGating,
+  subscribeWorkflowStageGating,
+  type WorkflowStageGatingResult,
+} from '../../../engine/stageGating'
 import {
   findWorkflowTransitionTarget,
   performWorkflowTransitionSideEffects,
@@ -109,6 +113,7 @@ export function StatusPathInput(props: StringInputProps<StatusPathSchemaType>) {
   >(null)
   const [gatedTasks, setGatedTasks] = useState<WorkflowTransitionTaskRow[]>([])
   const [gatedStageName, setGatedStageName] = useState('')
+  const [gatingStage, setGatingStage] = useState<null | WorkflowTransitionStage>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
 
   useEffect(() => {
@@ -166,6 +171,7 @@ export function StatusPathInput(props: StringInputProps<StatusPathSchemaType>) {
     setPendingTaskTemplates(null)
     setGatedTasks([])
     setGatedStageName('')
+    setGatingStage(null)
   }, [])
 
   const buildPendingTaskTemplates = useCallback(
@@ -204,6 +210,42 @@ export function StatusPathInput(props: StringInputProps<StatusPathSchemaType>) {
     },
     [aclData, assignments, projectUsers, workflow?.roles],
   )
+
+  const openConfirmModal = useCallback(
+    (stage: WorkflowTransitionStage) => {
+      setGatedTasks([])
+      setGatingStage(null)
+      setPendingStage(stage)
+      setPendingTaskTemplates(
+        stage.taskTemplates?.length ? buildPendingTaskTemplates(stage.taskTemplates) : null,
+      )
+      setModalType('confirm')
+    },
+    [buildPendingTaskTemplates],
+  )
+
+  useEffect(() => {
+    if (modalType !== 'gated' || !gatingStage || !draftDocumentId || !pendingStage) {
+      return
+    }
+
+    return subscribeWorkflowStageGating({
+      client,
+      documentId: draftDocumentId,
+      onError: (error: unknown) => {
+        console.error('[StatusPathInput] Failed to refresh gated tasks:', error)
+      },
+      onResult: (result: WorkflowStageGatingResult) => {
+        if (result.blocked) {
+          setGatedTasks(result.tasks)
+          return
+        }
+
+        openConfirmModal(pendingStage)
+      },
+      stage: gatingStage,
+    })
+  }, [client, draftDocumentId, gatingStage, modalType, openConfirmModal, pendingStage])
 
   const applyTransition = useCallback(
     async (
@@ -288,6 +330,7 @@ export function StatusPathInput(props: StringInputProps<StatusPathSchemaType>) {
 
         if (blocked) {
           setGatedTasks(tasks)
+          setGatingStage(currentStage)
           setGatedStageName(currentStage.label || currentStage.slug || 'Current stage')
           setPendingStage(stage)
           setModalType('gated')
@@ -385,6 +428,7 @@ export function StatusPathInput(props: StringInputProps<StatusPathSchemaType>) {
 
   const handleGatedDialogConfirm = useCallback(
     async (overrides: WorkflowTransitionTaskStatusOverride[]) => {
+      setGatingStage(null)
       const mainDataset = client.config().dataset
       if (mainDataset) {
         const addonClient = client.withConfig({dataset: `${mainDataset}-comments`})

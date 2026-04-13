@@ -72,7 +72,24 @@ export function WorkflowTransitionGatedDialogContent({
 
   useEffect(() => {
     setOverrides(new Map())
-  }, [sourceStageName, targetStageTitle, tasks])
+  }, [sourceStageName, targetStageTitle])
+
+  useEffect(() => {
+    setOverrides((prev) => {
+      const activeTaskIds = new Set(tasks.map((task) => task._id))
+      let changed = false
+      const next = new Map(prev)
+
+      prev.forEach((_status, taskId) => {
+        if (!activeTaskIds.has(taskId)) {
+          next.delete(taskId)
+          changed = true
+        }
+      })
+
+      return changed ? next : prev
+    })
+  }, [tasks])
 
   const visibleTasks = useMemo(() => getVisibleTasks(tasks, overrides), [tasks, overrides])
   const remainingTaskCount = visibleTasks.length

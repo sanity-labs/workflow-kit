@@ -1,5 +1,5 @@
 import {PortableText} from '@portabletext/react'
-import {Button, Card, Dialog, Flex, Heading, Label, Stack, TextArea} from '@sanity/ui'
+import {Button, Card, Dialog, Flex, Heading, Label, Stack, Text, TextArea} from '@sanity/ui'
 import {useEffect, useMemo, useState} from 'react'
 
 import type {
@@ -65,6 +65,7 @@ export function WorkflowTransitionConfirmDialogContent({
 
   const hasCriteria = Array.isArray(criteria) && criteria.length > 0
   const hasTemplates = Array.isArray(taskTemplates) && taskTemplates.length > 0
+  const hasSupportingContent = hasCriteria || hasTemplates
   const resolvedConfirmText = confirmText ?? `Move to ${stageTitle}`
   const resolvedSubmittingText = submittingText ?? `Moving to ${stageTitle}...`
 
@@ -79,6 +80,15 @@ export function WorkflowTransitionConfirmDialogContent({
 
   return (
     <Stack paddingX={4} paddingBottom={4} paddingTop={2} space={4}>
+      {!hasSupportingContent && (
+        <Card padding={4} border tone="positive" radius={2}>
+          <Stack space={3}>
+            <Heading size={1}>All required tasks are complete</Heading>
+            <Text size={1}>Ready to move to {stageTitle}.</Text>
+          </Stack>
+        </Card>
+      )}
+
       {hasCriteria && (
         <Card padding={4} border tone="primary" radius={2}>
           <Heading size={1}>Stage Guidelines for {stageTitle}</Heading>
