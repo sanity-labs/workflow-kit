@@ -1,5 +1,5 @@
 {
-  "name": "sanity-workflow-kit",
+  "name": "@sanity-labs/workflow-kit",
   "version": "0.1.0",
   "description": "Reusable workflow engine and UI for Sanity-powered applications.",
   "keywords": [
