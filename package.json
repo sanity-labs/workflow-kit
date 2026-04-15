@@ -1,25 +1,26 @@
 {
   "name": "sanity-workflow-kit",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Reusable workflow engine and UI for Sanity-powered applications.",
   "keywords": [
     "react",
     "sanity",
     "workflow"
   ],
-  "homepage": "https://github.com/sanity-io/sanetti-3#readme",
+  "homepage": "https://github.com/sanity-labs/workflow-kit#readme",
   "bugs": {
-    "url": "https://github.com/sanity-io/sanetti-3/issues"
+    "url": "https://github.com/sanity-labs/workflow-kit/issues"
   },
   "license": "MIT",
   "author": "Sam Hemingway <sam.hemingway@sanity.io>",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/sanity-io/sanetti-3.git"
+    "url": "git+https://github.com/sanity-labs/workflow-kit.git"
   },
   "files": [
     "dist",
-    "src"
+    "README.md",
+    "LICENSE"
   ],
   "type": "module",
   "sideEffects": false,
@@ -27,69 +28,56 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "source": "./src/index.ts",
-      "default": "./src/index.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./react": {
-      "source": "./src/react.ts",
-      "default": "./src/react.ts"
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js",
+      "default": "./dist/react.js"
     },
     "./studio": {
-      "source": "./src/studio.ts",
-      "default": "./src/studio.ts"
+      "types": "./dist/studio.d.ts",
+      "import": "./dist/studio.js",
+      "default": "./dist/studio.js"
     },
     "./engine": {
-      "source": "./src/engine.ts",
-      "default": "./src/engine.ts"
+      "types": "./dist/engine.d.ts",
+      "import": "./dist/engine.js",
+      "default": "./dist/engine.js"
     },
     "./types": {
-      "source": "./src/types.ts",
-      "default": "./src/types.ts"
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js",
+      "default": "./dist/types.js"
     },
     "./package.json": "./package.json"
   },
-  "publishConfig": {
-    "exports": {
-      ".": {
-        "import": "./dist/index.js",
-        "default": "./dist/index.js"
-      },
-      "./react": {
-        "import": "./dist/react.js",
-        "default": "./dist/react.js"
-      },
-      "./studio": {
-        "import": "./dist/studio.js",
-        "default": "./dist/studio.js"
-      },
-      "./engine": {
-        "import": "./dist/engine.js",
-        "default": "./dist/engine.js"
-      },
-      "./types": {
-        "import": "./dist/types.js",
-        "default": "./dist/types.js"
-      },
-      "./package.json": "./package.json"
-    },
-    "types": "./dist/index.d.ts"
-  },
   "scripts": {
-    "build": "pkg-utils build --strict --check --clean",
-    "lint": "oxlint .",
-    "typecheck": "tsgo --noEmit"
+    "build": "tsdown --config tsdown.config.ts",
+    "build:watch": "tsdown --config tsdown.config.ts --watch",
+    "format": "oxfmt package.json tsconfig.json tsconfig.build.json tsdown.config.ts src",
+    "format:check": "oxfmt --check package.json tsconfig.json tsconfig.build.json tsdown.config.ts src",
+    "lint": "oxlint src tsdown.config.ts",
+    "typecheck": "tsgo --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@portabletext/react": "^5.0.0",
     "lucide-react": "^0.577.0"
   },
   "devDependencies": {
-    "@sanity/pkg-utils": "^10.4.13",
+    "@changesets/cli": "^2.30.0",
+    "@types/node": "^24.0.4",
     "@types/react": "^19.2.14",
+    "@typescript/native-preview": "7.0.0-dev.20260320.1",
+    "oxfmt": "^0.41.0",
+    "oxlint": "^1.56.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "sanity": "^5.20.0",
     "styled-components": "^6.4.0",
+    "tsdown": "^0.21.7",
     "typescript": "^6.0.2"
   },
   "peerDependencies": {
@@ -100,5 +88,6 @@
   },
   "engines": {
     "node": ">=18"
-  }
+  },
+  "packageManager": "pnpm@10.32.1"
 }

@@ -1,4 +1,14 @@
 {
-  "extends": "./tsconfig.settings",
-  "include": ["./src", "./package.config.ts"]
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "declaration": false,
+    "noEmit": true
+  },
+  "include": ["src/**/*"]
 }
