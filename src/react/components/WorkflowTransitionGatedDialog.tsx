@@ -1,50 +1,45 @@
-import { Button, Card, Dialog, Flex, Heading, Stack, Text } from "@sanity/ui";
-import { useEffect, useMemo, useState } from "react";
+import {Button, Card, Dialog, Flex, Heading, Stack, Text} from '@sanity/ui'
+import {useEffect, useMemo, useState} from 'react'
 
 import type {
   WorkflowTransitionDialogUser,
   WorkflowTransitionTaskRow,
   WorkflowTransitionTaskStatusOverride,
-} from "../../types/dialogs";
-import { WorkflowTransitionTaskInstanceRow } from "./WorkflowTransitionTaskCard";
+} from '../../types/dialogs'
+import {WorkflowTransitionTaskInstanceRow} from './WorkflowTransitionTaskCard'
 
 export interface WorkflowTransitionGatedDialogContentProps {
-  currentUserCanOverride: boolean;
-  isSubmitting?: boolean;
-  onCancel: () => void;
-  onConfirm: (
-    overrides: WorkflowTransitionTaskStatusOverride[],
-  ) => void | Promise<void>;
-  onViewTask?: (taskId: string) => void;
-  sourceStageName: string;
-  submittingText?: string;
-  targetStageTitle: string;
-  tasks: WorkflowTransitionTaskRow[];
-  users?: WorkflowTransitionDialogUser[];
+  currentUserCanOverride: boolean
+  isSubmitting?: boolean
+  onCancel: () => void
+  onConfirm: (overrides: WorkflowTransitionTaskStatusOverride[]) => void | Promise<void>
+  onViewTask?: (taskId: string) => void
+  sourceStageName: string
+  submittingText?: string
+  targetStageTitle: string
+  tasks: WorkflowTransitionTaskRow[]
+  users?: WorkflowTransitionDialogUser[]
 }
 
 export interface WorkflowTransitionGatedDialogProps extends WorkflowTransitionGatedDialogContentProps {
-  dialogId?: string;
-  open: boolean;
-  zOffset?: number;
+  dialogId?: string
+  open: boolean
+  zOffset?: number
 }
 
 function getVisibleTasks(
   tasks: WorkflowTransitionTaskRow[],
-  overrides: Map<string, "closed" | "open">,
+  overrides: Map<string, 'closed' | 'open'>,
 ): WorkflowTransitionTaskRow[] {
   return [...tasks]
     .map((task) => ({
       ...task,
       status: overrides.get(task._id) ?? task.status,
     }))
-    .filter((task) => task.status === "open")
+    .filter((task) => task.status === 'open')
     .sort((left, right) => {
-      return (
-        new Date(left.createdAt ?? 0).getTime() -
-        new Date(right.createdAt ?? 0).getTime()
-      );
-    });
+      return new Date(left.createdAt ?? 0).getTime() - new Date(right.createdAt ?? 0).getTime()
+    })
 }
 
 export function WorkflowTransitionGatedDialogContent({
@@ -59,107 +54,73 @@ export function WorkflowTransitionGatedDialogContent({
   tasks,
   users = [],
 }: WorkflowTransitionGatedDialogContentProps) {
-  const [overrides, setOverrides] = useState<Map<string, "closed" | "open">>(
-    new Map(),
-  );
+  const [overrides, setOverrides] = useState<Map<string, 'closed' | 'open'>>(new Map())
 
   useEffect(() => {
-    setOverrides(new Map());
-  }, [sourceStageName, targetStageTitle]);
+    setOverrides(new Map())
+  }, [sourceStageName, targetStageTitle])
 
   useEffect(() => {
     setOverrides((prev) => {
-      const activeTaskIds = new Set(tasks.map((task) => task._id));
-      let changed = false;
-      const next = new Map(prev);
+      const activeTaskIds = new Set(tasks.map((task) => task._id))
+      let changed = false
+      const next = new Map(prev)
 
       prev.forEach((_status, taskId) => {
         if (!activeTaskIds.has(taskId)) {
-          next.delete(taskId);
-          changed = true;
+          next.delete(taskId)
+          changed = true
         }
-      });
+      })
 
-      return changed ? next : prev;
-    });
-  }, [tasks]);
+      return changed ? next : prev
+    })
+  }, [tasks])
 
-  const visibleTasks = useMemo(
-    () => getVisibleTasks(tasks, overrides),
-    [tasks, overrides],
-  );
-  const remainingTaskCount = visibleTasks.length;
-  const allTasksClosed = remainingTaskCount === 0;
-  const resolvedSubmittingText =
-    submittingText ?? `Moving to ${targetStageTitle}...`;
+  const visibleTasks = useMemo(() => getVisibleTasks(tasks, overrides), [tasks, overrides])
+  const remainingTaskCount = visibleTasks.length
+  const allTasksClosed = remainingTaskCount === 0
+  const resolvedSubmittingText = submittingText ?? `Moving to ${targetStageTitle}...`
 
   return (
-    <Stack
-      padding={4}
-      space={4}
-    >
+    <Stack padding={4} space={4}>
       {allTasksClosed ? (
-        <Card
-          padding={3}
-          radius={2}
-          border
-          tone="positive"
-        >
+        <Card padding={3} radius={2} border tone="positive">
           All tasks completed for {sourceStageName} stage. Ready to advance.
         </Card>
       ) : currentUserCanOverride ? (
-        <Card
-          padding={3}
-          radius={2}
-          border
-          tone="suggest"
-        >
+        <Card padding={3} radius={2} border tone="suggest">
           <Stack space={3}>
             <Heading size={1}>
               {remainingTaskCount} required task
-              {remainingTaskCount === 1 ? "" : "s"} still incomplete for{" "}
-              {sourceStageName} stage
+              {remainingTaskCount === 1 ? '' : 's'} still incomplete for {sourceStageName} stage
             </Heading>
             <Text size={1}>Mark the remaining tasks as complete?</Text>
           </Stack>
         </Card>
       ) : (
-        <Card
-          padding={3}
-          radius={2}
-          border
-          tone="caution"
-        >
+        <Card padding={3} radius={2} border tone="caution">
           <Stack space={3}>
             <Heading size={1}>
               {remainingTaskCount} required task
-              {remainingTaskCount === 1 ? "" : "s"} still incomplete for{" "}
-              {sourceStageName} stage
+              {remainingTaskCount === 1 ? '' : 's'} still incomplete for {sourceStageName} stage
             </Heading>
             <Text size={1}>
-              The following required tasks must be completed before this
-              document can advance:
+              The following required tasks must be completed before this document can advance:
             </Text>
           </Stack>
         </Card>
       )}
 
       {currentUserCanOverride && !allTasksClosed && (
-        <Card
-          padding={3}
-          radius={2}
-          border
-          tone="caution"
-        >
-          <Text size={1}>
-            Warning: you have permission to override this gate.
-          </Text>
+        <Card padding={3} radius={2} border tone="caution">
+          <Text size={1}>Warning: you have permission to override this gate.</Text>
         </Card>
       )}
 
       <Stack space={2}>
         {visibleTasks.map((task) => {
-          const assignee = users.find((user) => user.id === task.assignedTo);
+          const assignee = users.find((user) => user.id === task.assignedTo)
 
           return (
             <WorkflowTransitionTaskInstanceRow
@@ -167,35 +128,30 @@ export function WorkflowTransitionGatedDialogContent({
               currentUserCanOverride={currentUserCanOverride}
               onToggleClosed={() => {
                 setOverrides((prev) => {
-                  const next = new Map(prev);
+                  const next = new Map(prev)
                   const originalStatus = tasks.find(
                     (candidate) => candidate._id === task._id,
-                  )?.status;
-                  const newStatus = task.status === "open" ? "closed" : "open";
+                  )?.status
+                  const newStatus = task.status === 'open' ? 'closed' : 'open'
 
                   if (originalStatus === newStatus) {
-                    next.delete(task._id);
+                    next.delete(task._id)
                   } else {
-                    next.set(task._id, newStatus);
+                    next.set(task._id, newStatus)
                   }
 
-                  return next;
-                });
+                  return next
+                })
               }}
               task={task}
               user={assignee}
-              onViewTask={
-                onViewTask ? () => onViewTask(task._id) : undefined
-              }
+              onViewTask={onViewTask ? () => onViewTask(task._id) : undefined}
             />
-          );
+          )
         })}
       </Stack>
 
-      <Flex
-        gap={3}
-        justify="flex-end"
-      >
+      <Flex gap={3} justify="flex-end">
         {currentUserCanOverride ? (
           <>
             <Button
@@ -215,7 +171,7 @@ export function WorkflowTransitionGatedDialogContent({
                     status,
                     taskId,
                   })),
-                );
+                )
               }}
               padding={3}
               text={
@@ -225,37 +181,31 @@ export function WorkflowTransitionGatedDialogContent({
                     ? `Move to ${targetStageTitle}`
                     : `Override & Move to ${targetStageTitle}`
               }
-              tone={allTasksClosed ? "positive" : "caution"}
+              tone={allTasksClosed ? 'positive' : 'caution'}
             />
           </>
         ) : (
-          <Button
-            fontSize={1}
-            mode="ghost"
-            onClick={onCancel}
-            padding={3}
-            text="Close"
-          />
+          <Button fontSize={1} mode="ghost" onClick={onCancel} padding={3} text="Close" />
         )}
       </Flex>
     </Stack>
-  );
+  )
 }
 
 export function WorkflowTransitionGatedDialog({
   currentUserCanOverride,
-  dialogId = "workflow-transition-gated-dialog",
+  dialogId = 'workflow-transition-gated-dialog',
   open,
   sourceStageName,
   targetStageTitle,
   zOffset = 1000,
   ...contentProps
 }: WorkflowTransitionGatedDialogProps) {
-  if (!open) return null;
+  if (!open) return null
 
   const header = currentUserCanOverride
     ? `Move to ${targetStageTitle}`
-    : "Can't advance - open tasks remaining";
+    : "Can't advance - open tasks remaining"
 
   return (
     <Dialog
@@ -273,5 +223,5 @@ export function WorkflowTransitionGatedDialog({
         targetStageTitle={targetStageTitle}
       />
     </Dialog>
-  );
+  )
 }

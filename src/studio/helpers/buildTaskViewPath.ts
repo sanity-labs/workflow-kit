@@ -7,15 +7,15 @@
  * cannot be parsed.
  */
 export function buildTaskViewPath(taskId: string): string | undefined {
-  if (typeof window === "undefined") return undefined;
+  if (typeof window === 'undefined') return undefined
 
   try {
-    const url = new URL(window.location.href);
-    url.searchParams.set("sidebar", "tasks");
-    url.searchParams.set("viewMode", "edit");
-    url.searchParams.set("selectedTask", taskId);
-    return `${url.pathname}${url.search}`;
+    const url = new URL(window.location.href)
+    url.searchParams.set('sidebar', 'tasks')
+    url.searchParams.set('viewMode', 'edit')
+    url.searchParams.set('selectedTask', taskId)
+    return `${url.pathname}${url.search}`
   } catch {
-    return undefined;
+    return undefined
   }
 }
