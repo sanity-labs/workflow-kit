@@ -1,6 +1,5 @@
 import {Button, Card, Dialog, Flex, Heading, Stack, Text} from '@sanity/ui'
-import {useCallback, useEffect, useMemo, useState} from 'react'
-import {useRouter} from 'sanity/router'
+import {useEffect, useMemo, useState} from 'react'
 
 import type {
   WorkflowTransitionDialogUser,
@@ -14,6 +13,7 @@ export interface WorkflowTransitionGatedDialogContentProps {
   isSubmitting?: boolean
   onCancel: () => void
   onConfirm: (overrides: WorkflowTransitionTaskStatusOverride[]) => void | Promise<void>
+  onViewTask?: (taskId: string) => void
   sourceStageName: string
   submittingText?: string
   targetStageTitle: string
@@ -42,32 +42,18 @@ function getVisibleTasks(
     })
 }
 
-function buildTaskViewPath(taskId: string): string | undefined {
-  if (typeof window === 'undefined') return undefined
-
-  try {
-    const url = new URL(window.location.href)
-    url.searchParams.set('sidebar', 'tasks')
-    url.searchParams.set('viewMode', 'edit')
-    url.searchParams.set('selectedTask', taskId)
-    return `${url.pathname}${url.search}`
-  } catch {
-    return undefined
-  }
-}
-
 export function WorkflowTransitionGatedDialogContent({
   currentUserCanOverride,
   isSubmitting = false,
   onCancel,
   onConfirm,
+  onViewTask,
   sourceStageName,
   submittingText,
   targetStageTitle,
   tasks,
   users = [],
 }: WorkflowTransitionGatedDialogContentProps) {
-  const router = useRouter()
   const [overrides, setOverrides] = useState<Map<string, 'closed' | 'open'>>(new Map())
 
   useEffect(() => {
@@ -95,14 +81,6 @@ export function WorkflowTransitionGatedDialogContent({
   const remainingTaskCount = visibleTasks.length
   const allTasksClosed = remainingTaskCount === 0
   const resolvedSubmittingText = submittingText ?? `Moving to ${targetStageTitle}...`
-  const handleViewTask = useCallback(
-    (taskId: string) => {
-      const path = buildTaskViewPath(taskId)
-      if (!path) return
-      router.navigateUrl({path})
-    },
-    [router],
-  )
 
   return (
     <Stack padding={4} space={4}>
@@ -114,8 +92,8 @@ export function WorkflowTransitionGatedDialogContent({
         <Card padding={3} radius={2} border tone="suggest">
           <Stack space={3}>
             <Heading size={1}>
-              {remainingTaskCount} required task{remainingTaskCount === 1 ? '' : 's'} still
-              incomplete for {sourceStageName} stage
+              {remainingTaskCount} required task
+              {remainingTaskCount === 1 ? '' : 's'} still incomplete for {sourceStageName} stage
             </Heading>
             <Text size={1}>Mark the remaining tasks as complete?</Text>
           </Stack>
@@ -124,8 +102,8 @@ export function WorkflowTransitionGatedDialogContent({
         <Card padding={3} radius={2} border tone="caution">
           <Stack space={3}>
             <Heading size={1}>
-              {remainingTaskCount} required task{remainingTaskCount === 1 ? '' : 's'} still
-              incomplete for {sourceStageName} stage
+              {remainingTaskCount} required task
+              {remainingTaskCount === 1 ? '' : 's'} still incomplete for {sourceStageName} stage
             </Heading>
             <Text size={1}>
               The following required tasks must be completed before this document can advance:
@@ -167,7 +145,7 @@ export function WorkflowTransitionGatedDialogContent({
               }}
               task={task}
               user={assignee}
-              onViewTask={() => handleViewTask(task._id)}
+              onViewTask={onViewTask ? () => onViewTask(task._id) : undefined}
             />
           )
         })}
@@ -189,7 +167,10 @@ export function WorkflowTransitionGatedDialogContent({
               fontSize={1}
               onClick={() => {
                 void onConfirm(
-                  Array.from(overrides.entries()).map(([taskId, status]) => ({status, taskId})),
+                  Array.from(overrides.entries()).map(([taskId, status]) => ({
+                    status,
+                    taskId,
+                  })),
                 )
               }}
               padding={3}

@@ -3,6 +3,7 @@ import type {LucideIcon} from 'lucide-react'
 import {useCallback, useEffect, useMemo, useState} from 'react'
 import type {StringInputProps, StringOptions, StringSchemaType} from 'sanity'
 import {set, useClient, useCurrentUser, useFormValue} from 'sanity'
+import {useRouter} from 'sanity/router'
 
 import {canUseOffRampStage, getOffRampDisabledTitle} from '../../../engine/roleAccess'
 import {workflowRoleSlugMatches} from '../../../engine/roleMatching'
@@ -28,6 +29,7 @@ import type {
   WorkflowTransitionTaskTemplatePreview,
 } from '../../../types/dialogs'
 import type {WorkflowDefinition, WorkflowTransitionStage} from '../../../types/transition'
+import {buildTaskViewPath} from '../../helpers/buildTaskViewPath'
 import {useWorkflowProjectUsers} from '../../hooks/useWorkflowProjectUsers'
 
 const DEFAULT_API_VERSION = '2026-04-12'
@@ -55,7 +57,10 @@ function buildStaticWorkflow(options?: StatusPathOptions): WorkflowDefinition | 
   const optionValues = listOptions.map((option) =>
     typeof option === 'string'
       ? {title: option, value: option}
-      : {title: option.title ?? option.value ?? '', value: option.value ?? ''},
+      : {
+          title: option.title ?? option.value ?? '',
+          value: option.value ?? '',
+        },
   )
   const titleMap = new Map(optionValues.map((option) => [option.value, option.title]))
   const iconConfig = options?.iconConfig
@@ -91,6 +96,7 @@ export function StatusPathInput(props: StringInputProps<StatusPathSchemaType>) {
   const size = options?.size ?? 'default'
   const client = useClient({apiVersion: DEFAULT_API_VERSION})
   const currentUser = useCurrentUser()
+  const router = useRouter()
   const toast = useToast()
   const documentId = useFormValue(['_id']) as string | undefined
   const documentType = useFormValue(['_type']) as string | undefined
@@ -127,7 +133,9 @@ export function StatusPathInput(props: StringInputProps<StatusPathSchemaType>) {
     setWorkflowLoaded(false)
 
     client
-      .fetch<WorkflowDefinition | null>(WORKFLOW_QUERY, {docType: workflowDocumentType})
+      .fetch<WorkflowDefinition | null>(WORKFLOW_QUERY, {
+        docType: workflowDocumentType,
+      })
       .then((result) => {
         if (cancelled) return
         setWorkflowDefinition(result)
@@ -431,7 +439,9 @@ export function StatusPathInput(props: StringInputProps<StatusPathSchemaType>) {
       setGatingStage(null)
       const mainDataset = client.config().dataset
       if (mainDataset) {
-        const addonClient = client.withConfig({dataset: `${mainDataset}-comments`})
+        const addonClient = client.withConfig({
+          dataset: `${mainDataset}-comments`,
+        })
         await Promise.all(
           overrides.map((override) =>
             addonClient
@@ -480,6 +490,10 @@ export function StatusPathInput(props: StringInputProps<StatusPathSchemaType>) {
         isSubmitting={isTransitioning}
         onCancel={closeModal}
         onConfirm={handleGatedDialogConfirm}
+        onViewTask={(taskId) => {
+          const path = buildTaskViewPath(taskId)
+          if (path) router.navigateUrl({path})
+        }}
         open={modalType === 'gated' && Boolean(pendingStage)}
         sourceStageName={gatedStageName}
         targetStageTitle={pendingStage?.label || pendingStage?.slug || 'Next stage'}
