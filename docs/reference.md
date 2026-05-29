@@ -646,6 +646,7 @@ A Sanity `string` input that renders a `WorkflowStatusPath` wired up to the live
 
 - Reads the document id (`['_id']`), type (`['_type']`), and assignments (`['assignments']`) via `useFormValue`.
 - Fetches the matching workflow definition using `options.workflowDocumentType` as the query parameter.
+- Disables stage and off-ramp controls when the current user does not have Sanity `update` permission for the document pair.
 - When the user clicks a stage, opens the appropriate dialog (confirm / gated / off-ramp) and on confirm calls `performWorkflowTransition` followed by a patch of the `status` field via `props.onChange`.
 
 #### `StatusPathOptions`

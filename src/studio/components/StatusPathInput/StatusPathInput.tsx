@@ -2,7 +2,7 @@ import {useToast} from '@sanity/ui'
 import type {LucideIcon} from 'lucide-react'
 import {useCallback, useEffect, useMemo, useState} from 'react'
 import type {StringInputProps, StringOptions, StringSchemaType} from 'sanity'
-import {set, useClient, useCurrentUser, useFormValue} from 'sanity'
+import {set, useClient, useCurrentUser, useDocumentPairPermissions, useFormValue} from 'sanity'
 import {useRouter} from 'sanity/router'
 
 import {canUseOffRampStage, getOffRampDisabledTitle} from '../../../engine/roleAccess'
@@ -16,6 +16,7 @@ import {
   findWorkflowTransitionTarget,
   performWorkflowTransitionSideEffects,
   resolveAssigneeForTaskTemplate,
+  stripDraftsPrefix,
   WORKFLOW_QUERY,
 } from '../../../engine/transition'
 import {WorkflowStatusPath} from '../../../react/components/WorkflowStatusPath'
@@ -100,6 +101,8 @@ export function StatusPathInput(props: StringInputProps<StatusPathSchemaType>) {
   const toast = useToast()
   const documentId = useFormValue(['_id']) as string | undefined
   const documentType = useFormValue(['_type']) as string | undefined
+  const publishedDocumentId = documentId ? stripDraftsPrefix(documentId) : ''
+  const permissionDocumentType = documentType || workflowDocumentType || ''
   const assignments = useFormValue(['assignments']) as
     | Array<{assignmentType?: string; userId?: string}>
     | undefined
@@ -109,6 +112,11 @@ export function StatusPathInput(props: StringInputProps<StatusPathSchemaType>) {
       : `drafts.${documentId}`
     : undefined
 
+  const [updatePermission, updatePermissionLoading] = useDocumentPairPermissions({
+    id: publishedDocumentId,
+    permission: 'update',
+    type: permissionDocumentType,
+  })
   const {aclData, projectUsers} = useWorkflowProjectUsers(client)
   const [workflowDefinition, setWorkflowDefinition] = useState<null | WorkflowDefinition>(null)
   const [workflowLoaded, setWorkflowLoaded] = useState(false)
@@ -158,6 +166,14 @@ export function StatusPathInput(props: StringInputProps<StatusPathSchemaType>) {
   const currentStage = useMemo(
     () => (value ? findWorkflowTransitionTarget(workflow, value) : undefined),
     [value, workflow],
+  )
+  const canEditStatus = Boolean(
+    !readOnly &&
+    currentUser &&
+    publishedDocumentId &&
+    permissionDocumentType &&
+    !updatePermissionLoading &&
+    updatePermission?.granted,
   )
 
   const currentUserCanOverride = useMemo(() => {
@@ -262,6 +278,11 @@ export function StatusPathInput(props: StringInputProps<StatusPathSchemaType>) {
       note?: string,
       reason?: string,
     ) => {
+      if (!canEditStatus) {
+        closeModal()
+        return
+      }
+
       if (!nextStage.slug) return
 
       onChange(set(nextStage.slug))
@@ -314,6 +335,7 @@ export function StatusPathInput(props: StringInputProps<StatusPathSchemaType>) {
     },
     [
       assignments,
+      canEditStatus,
       client,
       closeModal,
       currentUser?.id,
@@ -327,7 +349,7 @@ export function StatusPathInput(props: StringInputProps<StatusPathSchemaType>) {
 
   const handleStageSelect = useCallback(
     async (stage: WorkflowTransitionStage) => {
-      if (readOnly || !stage.slug || stage.slug === value || !workflow) return
+      if (!canEditStatus || !stage.slug || stage.slug === value || !workflow) return
 
       if (currentStage?.enableCompletionGating && draftDocumentId) {
         const {blocked, tasks} = await evaluateWorkflowStageGating({
@@ -377,10 +399,10 @@ export function StatusPathInput(props: StringInputProps<StatusPathSchemaType>) {
     [
       applyTransition,
       buildPendingTaskTemplates,
+      canEditStatus,
       client,
       currentStage,
       draftDocumentId,
-      readOnly,
       value,
       workflow,
     ],
@@ -388,7 +410,7 @@ export function StatusPathInput(props: StringInputProps<StatusPathSchemaType>) {
 
   const handleOffRampSelect = useCallback(
     (stage: WorkflowTransitionStage) => {
-      if (readOnly || !stage.slug) return
+      if (!canEditStatus || !stage.slug) return
 
       const canUseOffRamp = canUseOffRampStage({
         aclData,
@@ -414,7 +436,7 @@ export function StatusPathInput(props: StringInputProps<StatusPathSchemaType>) {
       setPendingStage(stage)
       setModalType('offramp')
     },
-    [aclData, currentUser, projectUsers, readOnly, toast, workflow?.roles],
+    [aclData, canEditStatus, currentUser, projectUsers, toast, workflow?.roles],
   )
 
   const handleConfirmDialogConfirm = useCallback(
@@ -476,7 +498,7 @@ export function StatusPathInput(props: StringInputProps<StatusPathSchemaType>) {
     <>
       <WorkflowStatusPath
         currentStatus={value}
-        disabled={Boolean(readOnly || !currentUser)}
+        disabled={!canEditStatus}
         loading={Boolean(workflowDocumentType && !workflowLoaded)}
         onSelectOffRamp={handleOffRampSelect}
         onSelectStage={handleStageSelect}
