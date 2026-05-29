@@ -127,7 +127,7 @@ export function MyAdvanceAction(props: DocumentActionProps) {
 }
 ```
 
-`performWorkflowTransition` patches `status`, appends a `setStatus` audit entry, and (if the target stage has task templates) creates tasks in the `-comments` addon dataset.
+`performWorkflowTransition` patches `status`, appends a `workflow.setStatus` audit entry, and (if the target stage has task templates) creates tasks in the `-comments` addon dataset.
 
 ---
 
@@ -148,7 +148,7 @@ See [docs/reference.md](docs/reference.md) for every export with signatures and 
 
 **`StatusPathInput` doesn't resolve the workflow definition.**
 
-The input expects `options.workflowDocumentType` on the schema field so it can query `*[_type == "workflowDefinition" && documentType == $workflowDocumentType][0]`. The plugin's `withWorkflow` decorator sets this automatically; in a custom input, make sure the schema is built like:
+The input expects `options.workflowDocumentType` on the schema field so it can query `*[_type == "workflow.definition" && documentType == $workflowDocumentType][0]`. The plugin's `withWorkflow` decorator sets this automatically; in a custom input, make sure the schema is built like:
 
 ```ts
 defineField({
@@ -173,7 +173,7 @@ Tasks (and gating) live in the `<dataset>-comments` addon dataset. You need a `S
 
 **Role matching is returning unexpected results.**
 
-`workflowRoleSlugMatches` has aliasing rules for common role slugs (`reporter` matches `author`, `section_editor` matches `editor` and `section-editor`, etc.). If you're using custom slugs, `normalizeWorkflowRoleSlug` shows the canonical form. See [`src/engine/roleMatching.ts`](src/engine/roleMatching.ts).
+`workflow.roleSlugMatches` has aliasing rules for common role slugs (`reporter` matches `author`, `section_editor` matches `editor` and `section-editor`, etc.). If you're using custom slugs, `normalizeWorkflowRoleSlug` shows the canonical form. See [`src/engine/roleMatching.ts`](src/engine/roleMatching.ts).
 
 ---
 
