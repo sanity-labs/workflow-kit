@@ -1,5 +1,11 @@
 # @sanity-labs/workflow-kit
 
+## 0.3.0
+
+### Minor Changes
+
+- e93f5d4: Read workflow definitions from the namespaced `workflow.definition` document type and write audit history entries as `_type: 'workflow.setStatus'` with `completedBy._type: 'workflow.user'`.
+
 ## 0.2.1
 
 ### Patch Changes
