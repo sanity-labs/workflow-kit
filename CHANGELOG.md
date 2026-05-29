@@ -1,5 +1,11 @@
 # @sanity-labs/workflow-kit
 
+## 0.2.1
+
+### Patch Changes
+
+- 8e4dd87: Disable `StatusPathInput` stage controls when the current user lacks Sanity update permission for the document.
+
 ## 0.2.0
 
 ### Minor Changes
