@@ -11,7 +11,7 @@ import {workflowRoleSlugMatches} from './roleMatching'
 
 const workflowDefinitionPromiseCache = new Map<string, Promise<null | WorkflowDefinition>>()
 
-export const WORKFLOW_QUERY = `*[_type == "workflowDefinition" && documentType == $docType][0] {
+export const WORKFLOW_QUERY = `*[_type == "workflow.definition" && documentType == $docType][0] {
   forwardOnly,
   stages[] {
     stageCriteria,
@@ -147,10 +147,10 @@ export function buildStatusAuditEntry({
 
   return {
     _key: generateStatusAuditKey(),
-    _type: 'setStatus',
+    _type: 'workflow.setStatus',
     completedAt,
     completedBy: {
-      _type: 'user',
+      _type: 'workflow.user',
       userId: currentUserId,
     },
     ...(pendingReason ? {reason: pendingReason} : {}),

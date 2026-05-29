@@ -33,7 +33,7 @@ import {
   getWorkflowRoleLabels,
   getOffRampDisabledTitle,
   findProjectUserForCurrentSanityMember,
-  workflowRoleSlugMatches,
+  workflow.roleSlugMatches,
   normalizeWorkflowRoleSlug,
   getWorkflowRoleMatchCandidates,
   getLatestWorkflowStatusAuditEntry,
@@ -145,7 +145,7 @@ interface PerformWorkflowTransitionParams {
 }
 ```
 
-`taskAssigneeOverrides` is a map from `taskTemplates[]` index to the user id that should be assigned, overriding `resolveAssigneeForTaskTemplate`. `note` is attached as a `tasks.comment` on every generated task.
+`taskAssigneeOverrides` is a map from `workflow.taskTemplates[]` index to the user id that should be assigned, overriding `resolveAssigneeForTaskTemplate`. `note` is attached as a `tasks.comment` on every generated task.
 
 #### `performWorkflowTransitionSideEffects(params)`
 
@@ -264,7 +264,7 @@ function resolveAssigneeForTaskTemplate(
 ): string | undefined
 ```
 
-Finds the first `document.assignments[]` entry whose `assignmentType` matches `assigneeRole` via `workflowRoleSlugMatches`, and returns its `userId`.
+Finds the first `document.assignments[]` entry whose `assignmentType` matches `assigneeRole` via `workflow.roleSlugMatches`, and returns its `userId`.
 
 ### Gating
 
@@ -274,7 +274,7 @@ Finds the first `document.assignments[]` entry whose `assignmentType` matches `a
 function evaluateWorkflowStageGating(params: {
   client: SanityClient
   documentId: string
-  stage: Pick<WorkflowTransitionStage, 'enableCompletionGating' | 'taskTemplates'> | null | undefined
+  stage: Pick<WorkflowTransitionStage, 'enableCompletionGating' | 'workflow.taskTemplates'> | null | undefined
 }): Promise<WorkflowStageGatingResult>
 ```
 
@@ -286,7 +286,7 @@ One-shot check: returns `{blocked, requiredOpenCount, requiredTaskCount, tasks}`
 function subscribeWorkflowStageGating(params: {
   client: SanityClient
   documentId: string
-  stage: Pick<WorkflowTransitionStage, 'enableCompletionGating' | 'taskTemplates'> | null | undefined
+  stage: Pick<WorkflowTransitionStage, 'enableCompletionGating' | 'workflow.taskTemplates'> | null | undefined
   onResult: (result: WorkflowStageGatingResult) => void
   onError?: (error: unknown) => void
 }): () => void
@@ -316,10 +316,10 @@ interface WorkflowStageGatingTask {
 
 ### Roles and project users
 
-#### `workflowRoleSlugMatches(requested, candidate)`
+#### `workflow.roleSlugMatches(requested, candidate)`
 
 ```ts
-function workflowRoleSlugMatches(
+function workflow.roleSlugMatches(
   requested: string | null | undefined,
   candidate: string | null | undefined,
 ): boolean
@@ -349,7 +349,7 @@ Returns the list of alias slugs `value` could match, ordered so the exact form c
 function userHasWorkflowRoleAccess(params: {
   aclData: WorkflowProjectAclEntry[]
   projectUsers: WorkflowProjectUser[]
-  workflowRoles: WorkflowTransitionRole[] | null | undefined
+  workflow.roles: WorkflowTransitionRole[] | null | undefined
   requestedWorkflowRoleSlugs: string[]
   currentUserSanityId: string | null | undefined
   currentUserEmail?: string | null | undefined
@@ -364,7 +364,7 @@ Returns `true` when the current user is mapped to a project-user whose project r
 function canUseOffRampStage(params: {
   aclData: WorkflowProjectAclEntry[]
   projectUsers: WorkflowProjectUser[]
-  workflowRoles: WorkflowTransitionRole[] | null | undefined
+  workflow.roles: WorkflowTransitionRole[] | null | undefined
   allowedRoles: string[] | null | undefined
   currentUserSanityId: string | null | undefined
   currentUserEmail?: string | null | undefined
@@ -378,7 +378,7 @@ Permits off-ramp use when `allowedRoles` is empty/nullable, otherwise delegates 
 ```ts
 function getWorkflowRoleLabels(params: {
   requestedWorkflowRoleSlugs: string[] | null | undefined
-  workflowRoles: WorkflowTransitionRole[] | null | undefined
+  workflow.roles: WorkflowTransitionRole[] | null | undefined
 }): string[]
 ```
 
@@ -389,7 +389,7 @@ Returns the unique labels (falling back to slug) of every workflow role matching
 ```ts
 function getOffRampDisabledTitle(params: {
   allowedRoles: string[] | null | undefined
-  workflowRoles: WorkflowTransitionRole[] | null | undefined
+  workflow.roles: WorkflowTransitionRole[] | null | undefined
 }): string
 ```
 
@@ -485,7 +485,7 @@ Each dialog ships as two exports: `XxxDialog` (the full Sanity UI `Dialog` wrapp
 interface WorkflowTransitionConfirmDialogContentProps {
   stageTitle: string
   criteria?: WorkflowTransitionCriteriaBlock[] | null
-  taskTemplates?: WorkflowTransitionTaskTemplatePreview[] | null
+  workflow.taskTemplates?: WorkflowTransitionTaskTemplatePreview[] | null
   isSubmitting?: boolean
   confirmText?: string
   submittingText?: string
@@ -503,7 +503,7 @@ interface WorkflowTransitionConfirmDialogProps extends WorkflowTransitionConfirm
 }
 ```
 
-The confirmation dialog shown when entering a stage with `stageCriteria` or `taskTemplates`. Lets the user pick an assignee per template (from `template.eligibleUsers`) and leave a note. `onConfirm(overrides, note)` is called with any overrides the user made.
+The confirmation dialog shown when entering a stage with `stageCriteria` or `workflow.taskTemplates`. Lets the user pick an assignee per template (from `template.eligibleUsers`) and leave a note. `onConfirm(overrides, note)` is called with any overrides the user made.
 
 #### `WorkflowTransitionGatedDialog` / `WorkflowTransitionGatedDialogContent`
 
@@ -671,7 +671,7 @@ interface StatusPathSchemaType extends StringSchemaType {
 }
 ```
 
-Without a published `workflowDefinition` in the dataset, the input falls back to building a static workflow from `options.list`.
+Without a published `workflow.definition` in the dataset, the input falls back to building a static workflow from `options.list`.
 
 ### `buildTaskViewPath(taskId)`
 
@@ -771,7 +771,7 @@ interface WorkflowTransitionStage {
   color?: string
   tone?: string
   stageCriteria?: Array<{_type: string; [key: string]: unknown}>
-  taskTemplates?: WorkflowTaskTemplate[]
+  workflow.taskTemplates?: WorkflowTaskTemplate[]
   enableCompletionGating?: boolean
   gatingOverrideRoles?: string[]
   enablePublishing?: boolean
@@ -795,12 +795,12 @@ interface WorkflowTaskTemplate {
 
 interface WorkflowStatusAuditEntry {
   _key: string
-  _type: 'setStatus'
+  _type: 'workflow.setStatus'
   statusSlug: string
   statusLabel: string
   statusIcon?: string
   completedAt: string
-  completedBy: {_type: 'user'; userId: string}
+  completedBy: {_type: 'workflow.user'; userId: string}
   reason?: string
 }
 

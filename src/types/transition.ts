@@ -5,9 +5,9 @@ export interface WorkflowAssignmentValue {
 
 export interface WorkflowStatusAuditEntry {
   _key: string
-  _type: 'setStatus'
+  _type: 'workflow.setStatus'
   completedAt: string
-  completedBy: {_type: 'user'; userId: string}
+  completedBy: {_type: 'workflow.user'; userId: string}
   reason?: string
   statusIcon?: string
   statusLabel: string
