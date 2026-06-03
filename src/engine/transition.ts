@@ -20,7 +20,7 @@ export const WORKFLOW_QUERY = `*[_type == "workflow.definition" && documentType 
     enablePublishing,
     label,
     "slug": slug.current,
-    color,
+    "color": coalesce(color.hex, color),
     icon,
     taskTemplates[] { title, description, assigneeRole, dueInDays, required }
   },
@@ -28,7 +28,7 @@ export const WORKFLOW_QUERY = `*[_type == "workflow.definition" && documentType 
     stageCriteria,
     label,
     "slug": slug.current,
-    color,
+    "color": coalesce(color.hex, color),
     icon,
     tone,
     enablePublishing,
