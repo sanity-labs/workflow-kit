@@ -1,5 +1,11 @@
 # @sanity-labs/workflow-kit
 
+## 0.5.1
+
+### Patch Changes
+
+- 117cc43: Warn once in the console when workflow task or gating APIs fail because the `<dataset>-comments` comments/tasks addon dataset has not been initialised, telling developers to add a comment or create a task in Studio.
+
 ## 0.5.0
 
 ### Minor Changes
