@@ -128,6 +128,30 @@ export function resolveAssigneeForTaskTemplate(
   return typeof match?.userId === 'string' ? match.userId : undefined
 }
 
+/**
+ * Role-bound templates are deferred until an assignee is known, unless the
+ * confirm-dialog override map explicitly includes this template index
+ * (including intentional unassign via `undefined`).
+ */
+export function shouldDeferTaskTemplateCreation({
+  assigneeRole,
+  assignedTo,
+  hasAssigneeOverride,
+}: {
+  assigneeRole: string | undefined
+  assignedTo: string | undefined
+  hasAssigneeOverride: boolean
+}): boolean {
+  if (!assigneeRole || hasAssigneeOverride) return false
+  return !assignedTo
+}
+
+function getAddonCommentsClient(client: SanityClient) {
+  const {dataset} = client.config()
+  if (!dataset) return null
+  return client.withConfig({dataset: `${dataset}-comments`})
+}
+
 export function buildStatusAuditEntry({
   completedAt = new Date().toISOString(),
   currentUserId,
@@ -213,6 +237,11 @@ export interface CreateTasksForWorkflowTemplatesParams {
   documentType: string
   logPrefix?: string
   note?: string
+  /**
+   * When true, skip creating a template whose title already exists as a task
+   * for this document. Checked per template so later ensure() calls can still
+   * create remaining role-bound templates once assignees appear.
+   */
   skipIfTasksExist?: boolean
   taskAssigneeOverrides?: Map<number, string | undefined>
   templates: WorkflowTaskTemplate[]
@@ -221,6 +250,8 @@ export interface CreateTasksForWorkflowTemplatesParams {
 export interface CreateTasksForWorkflowTemplatesResult {
   createdTaskIds: string[]
   skippedExistingTasks: boolean
+  /** Titles skipped because the template has assigneeRole but no assignee yet. */
+  skippedMissingAssigneeTitles: string[]
 }
 
 export async function createTasksForWorkflowTemplates({
@@ -239,25 +270,32 @@ export async function createTasksForWorkflowTemplates({
   const mainDataset = clientConfig.dataset
   const projectId = clientConfig.projectId
   const cleanId = stripDraftsPrefix(documentId)
+  const emptyResult: CreateTasksForWorkflowTemplatesResult = {
+    createdTaskIds: [],
+    skippedExistingTasks: false,
+    skippedMissingAssigneeTitles: [],
+  }
 
   if (!mainDataset || !projectId || !cleanId) {
     console.error(`${logPrefix} Missing dataset, projectId, or document id - cannot create tasks`)
-    return {createdTaskIds: [], skippedExistingTasks: false}
+    return emptyResult
   }
 
   const addonClient = client.withConfig({dataset: `${mainDataset}-comments`})
 
+  let existingTitles = new Set<string>()
   if (skipIfTasksExist && templates.length > 0) {
     const templateTitles = Array.from(new Set(templates.map((template) => template.title)))
     try {
-      const existingCount = await addonClient.fetch<number>(
-        `count(*[_type == "tasks.task" && target.document._ref == $docId && title in $titles])`,
+      const existing = await addonClient.fetch<Array<{title?: string}>>(
+        `*[_type == "tasks.task" && target.document._ref == $docId && title in $titles]{ title }`,
         {docId: cleanId, titles: templateTitles},
       )
-
-      if (existingCount > 0) {
-        return {createdTaskIds: [], skippedExistingTasks: true}
-      }
+      existingTitles = new Set(
+        existing
+          .map((task) => task.title)
+          .filter((title): title is string => typeof title === 'string' && title.length > 0),
+      )
     } catch (error) {
       console.error(`${logPrefix} Failed to check for existing workflow tasks:`, error)
     }
@@ -275,12 +313,33 @@ export async function createTasksForWorkflowTemplates({
     documentType,
   }
 
+  const skippedMissingAssigneeTitles: string[] = []
+  let skippedExistingTasks = false
+
   const createdTaskIds = (
     await Promise.all(
       templates.map(async (template, index) => {
-        const assignedTo = taskAssigneeOverrides?.has(index)
-          ? taskAssigneeOverrides.get(index)
+        if (skipIfTasksExist && existingTitles.has(template.title)) {
+          skippedExistingTasks = true
+          return undefined
+        }
+
+        const hasAssigneeOverride = Boolean(taskAssigneeOverrides?.has(index))
+        const assignedTo = hasAssigneeOverride
+          ? taskAssigneeOverrides?.get(index)
           : resolveAssigneeForTaskTemplate(document, template.assigneeRole)
+
+        if (
+          shouldDeferTaskTemplateCreation({
+            assigneeRole: template.assigneeRole,
+            assignedTo,
+            hasAssigneeOverride,
+          })
+        ) {
+          skippedMissingAssigneeTitles.push(template.title)
+          return undefined
+        }
+
         const dueBy =
           typeof template.dueInDays === 'number'
             ? new Date(Date.now() + template.dueInDays * 24 * 60 * 60 * 1000).toISOString()
@@ -322,7 +381,174 @@ export async function createTasksForWorkflowTemplates({
     )
   ).filter((taskId): taskId is string => typeof taskId === 'string')
 
-  return {createdTaskIds, skippedExistingTasks: false}
+  if (skippedMissingAssigneeTitles.length > 0) {
+    console.info(
+      `${logPrefix} Deferred ${skippedMissingAssigneeTitles.length} task(s) until assignees exist:`,
+      skippedMissingAssigneeTitles.join(', '),
+    )
+  }
+
+  return {createdTaskIds, skippedExistingTasks, skippedMissingAssigneeTitles}
+}
+
+export interface AssignOpenWorkflowTasksFromAssignmentsParams {
+  client: SanityClient
+  document: null | WorkflowTransitionDocument | undefined
+  documentId: string
+  logPrefix?: string
+  templates: WorkflowTaskTemplate[]
+}
+
+export interface AssignOpenWorkflowTasksFromAssignmentsResult {
+  assignedTaskIds: string[]
+}
+
+/**
+ * Patch open, unassigned tasks that match stage template titles when
+ * `document.assignments` now resolves their `assigneeRole`.
+ */
+export async function assignOpenWorkflowTasksFromAssignments({
+  client,
+  document,
+  documentId,
+  logPrefix = '[workflowTransition]',
+  templates,
+}: AssignOpenWorkflowTasksFromAssignmentsParams): Promise<AssignOpenWorkflowTasksFromAssignmentsResult> {
+  const cleanId = stripDraftsPrefix(documentId)
+  const addonClient = getAddonCommentsClient(client)
+  const roleBoundTemplates = templates.filter(
+    (template) => typeof template.assigneeRole === 'string' && template.assigneeRole.length > 0,
+  )
+
+  if (!addonClient || !cleanId || roleBoundTemplates.length === 0) {
+    return {assignedTaskIds: []}
+  }
+
+  const titles = Array.from(new Set(roleBoundTemplates.map((template) => template.title)))
+
+  let openUnassigned: Array<{_id: string; title?: string; subscribers?: string[]}> = []
+  try {
+    openUnassigned = await addonClient.fetch(
+      `*[_type == "tasks.task" && target.document._ref == $docId && status == "open" && !defined(assignedTo) && title in $titles]{ _id, title, subscribers }`,
+      {docId: cleanId, titles},
+    )
+  } catch (error) {
+    console.error(`${logPrefix} Failed to load open unassigned workflow tasks:`, error)
+    return {assignedTaskIds: []}
+  }
+
+  const assignedTaskIds = (
+    await Promise.all(
+      openUnassigned.map(async (task) => {
+        const template = roleBoundTemplates.find((candidate) => candidate.title === task.title)
+        if (!template) return undefined
+
+        const assignedTo = resolveAssigneeForTaskTemplate(document, template.assigneeRole)
+        if (!assignedTo || typeof task._id !== 'string') return undefined
+
+        const subscribers = Array.isArray(task.subscribers) ? task.subscribers : []
+        const nextSubscribers = subscribers.includes(assignedTo)
+          ? subscribers
+          : [...subscribers, assignedTo]
+
+        try {
+          await addonClient.patch(task._id).set({assignedTo, subscribers: nextSubscribers}).commit()
+          return task._id
+        } catch (error) {
+          console.error(`${logPrefix} Failed to assign task ${task._id}:`, error)
+          return undefined
+        }
+      }),
+    )
+  ).filter((taskId): taskId is string => typeof taskId === 'string')
+
+  return {assignedTaskIds}
+}
+
+export interface EnsureWorkflowStageTasksParams {
+  client: SanityClient
+  currentUserId: string
+  document: null | WorkflowTransitionDocument | undefined
+  documentId: string
+  documentType: string
+  logPrefix?: string
+  /** Defaults to `document.status`. */
+  statusSlug?: string
+  workflowDefinition?: null | WorkflowDefinition
+}
+
+export interface EnsureWorkflowStageTasksResult {
+  assignedTaskIds: string[]
+  createdTaskIds: string[]
+  skippedExistingTasks: boolean
+  skippedMissingAssigneeTitles: string[]
+  targetStage?: WorkflowTransitionStage
+}
+
+/**
+ * Create missing tasks for the document's current (or given) stage and backfill
+ * assignees on any prior open unassigned matches. Call when assignments become
+ * ready — do not rely on publish (stages may gate publishing).
+ */
+export async function ensureWorkflowStageTasks({
+  client,
+  currentUserId,
+  document,
+  documentId,
+  documentType,
+  logPrefix = '[ensureWorkflowStageTasks]',
+  statusSlug,
+  workflowDefinition,
+}: EnsureWorkflowStageTasksParams): Promise<EnsureWorkflowStageTasksResult> {
+  const resolvedStatusSlug =
+    statusSlug || (typeof document?.status === 'string' ? document.status : undefined)
+
+  const emptyResult: EnsureWorkflowStageTasksResult = {
+    assignedTaskIds: [],
+    createdTaskIds: [],
+    skippedExistingTasks: false,
+    skippedMissingAssigneeTitles: [],
+  }
+
+  if (!resolvedStatusSlug) {
+    return emptyResult
+  }
+
+  const resolvedWorkflowDefinition =
+    workflowDefinition ?? (await fetchWorkflowDefinition(client, documentType))
+  const targetStage = findWorkflowTransitionTarget(resolvedWorkflowDefinition, resolvedStatusSlug)
+  const templates = targetStage?.taskTemplates || []
+
+  if (templates.length === 0) {
+    return {...emptyResult, targetStage}
+  }
+
+  const createResult = await createTasksForWorkflowTemplates({
+    client,
+    currentUserId,
+    document,
+    documentId,
+    documentType,
+    logPrefix,
+    skipIfTasksExist: true,
+    templates,
+  })
+
+  const backfillResult = await assignOpenWorkflowTasksFromAssignments({
+    client,
+    document,
+    documentId,
+    logPrefix,
+    templates,
+  })
+
+  return {
+    assignedTaskIds: backfillResult.assignedTaskIds,
+    createdTaskIds: createResult.createdTaskIds,
+    skippedExistingTasks: createResult.skippedExistingTasks,
+    skippedMissingAssigneeTitles: createResult.skippedMissingAssigneeTitles,
+    targetStage,
+  }
 }
 
 export interface AppendStatusAuditEntryParams {

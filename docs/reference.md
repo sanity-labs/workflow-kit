@@ -25,7 +25,10 @@ import {
   appendStatusAuditEntry,
   buildStatusAuditEntry,
   createTasksForWorkflowTemplates,
+  assignOpenWorkflowTasksFromAssignments,
+  ensureWorkflowStageTasks,
   resolveAssigneeForTaskTemplate,
+  shouldDeferTaskTemplateCreation,
   evaluateWorkflowStageGating,
   subscribeWorkflowStageGating,
   userHasWorkflowRoleAccess,
@@ -243,17 +246,60 @@ interface CreateTasksForWorkflowTemplatesParams {
   document?: WorkflowTransitionDocument | null
   note?: string  // creates a tasks.comment on each task
   taskAssigneeOverrides?: Map<number, string | undefined>
-  skipIfTasksExist?: boolean  // skips all if any task with a matching title already exists
+  skipIfTasksExist?: boolean  // per-template: skip titles that already exist for this document
   logPrefix?: string
 }
 
 interface CreateTasksForWorkflowTemplatesResult {
   createdTaskIds: string[]
   skippedExistingTasks: boolean
+  skippedMissingAssigneeTitles: string[]
 }
 ```
 
-Assignee resolution order for each task: `taskAssigneeOverrides.get(index)` → `resolveAssigneeForTaskTemplate(document, template.assigneeRole)` → unassigned.
+Assignee resolution order for each task: `taskAssigneeOverrides.get(index)` → `resolveAssigneeForTaskTemplate(document, template.assigneeRole)`.
+
+If a template has `assigneeRole` and there is **no** override entry for that index and no resolved assignee, the task is **deferred** (not created). Templates without `assigneeRole` may still be created unassigned. An explicit override map entry (including `undefined`) always wins and is not deferred.
+
+Do **not** rely on publish to create first-stage tasks — stages may gate publishing. Prefer `ensureWorkflowStageTasks` when assignments become ready.
+
+#### `shouldDeferTaskTemplateCreation({assigneeRole, assignedTo, hasAssigneeOverride})`
+
+```ts
+function shouldDeferTaskTemplateCreation(params: {
+  assigneeRole: string | undefined
+  assignedTo: string | undefined
+  hasAssigneeOverride: boolean
+}): boolean
+```
+
+Pure helper used by `createTasksForWorkflowTemplates`. Returns `true` when a role-bound template should wait for an assignee.
+
+#### `assignOpenWorkflowTasksFromAssignments(params)`
+
+```ts
+function assignOpenWorkflowTasksFromAssignments(
+  params: AssignOpenWorkflowTasksFromAssignmentsParams,
+): Promise<AssignOpenWorkflowTasksFromAssignmentsResult>
+```
+
+Hardening step: finds open, unassigned `tasks.task` documents matching the given template titles and patches `assignedTo` (and `subscribers`) from `document.assignments` when the template’s `assigneeRole` now resolves.
+
+#### `ensureWorkflowStageTasks(params)`
+
+```ts
+function ensureWorkflowStageTasks(
+  params: EnsureWorkflowStageTasksParams,
+): Promise<EnsureWorkflowStageTasksResult>
+```
+
+Primary entrypoint for assignment-ready enrollment:
+
+1. Resolve the current (or given) stage’s `taskTemplates`.
+2. Call `createTasksForWorkflowTemplates` with `skipIfTasksExist: true` (deferring role-bound templates without assignees).
+3. Run `assignOpenWorkflowTasksFromAssignments` to heal any prior unassigned opens.
+
+Call this when `assignments[]` is filled — not from publish alone.
 
 #### `resolveAssigneeForTaskTemplate(document, assigneeRole)`
 
