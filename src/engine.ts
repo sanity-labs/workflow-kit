@@ -17,6 +17,11 @@ export {
   type WorkflowStageGatingTask,
 } from './engine/stageGating'
 export {
+  getCommentsDatasetName,
+  isMissingCommentsDatasetError,
+  warnMissingCommentsDataset,
+} from './engine/commentsDataset'
+export {
   WORKFLOW_QUERY,
   appendStatusAuditEntry,
   assignOpenWorkflowTasksFromAssignments,

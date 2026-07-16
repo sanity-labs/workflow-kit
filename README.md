@@ -165,7 +165,9 @@ It's SSR-aware and returns `undefined` when `window` is not defined, or when the
 
 **`performWorkflowTransition` throws "Missing dataset, projectId, or document id".**
 
-Tasks (and gating) live in the `<dataset>-comments` addon dataset. You need a `SanityClient` whose `config()` returns both `dataset` and `projectId`. If the addon dataset doesn't exist yet, create it: `sanity dataset create <dataset>-comments`.
+Tasks (and gating) live in the `<dataset>-comments` addon dataset. You need a `SanityClient` whose `config()` returns both `dataset` and `projectId`.
+
+If the addon dataset was never initialised, open Studio, open any document, and **add a comment** or **create a task** once — that is what provisions the comments/tasks addon correctly (a bare `sanity dataset create …-comments` is not enough). Task create / gating calls also log a one-time `console.warn` pointing at that Studio setup step.
 
 **Peer-dep mismatch on install.**
 
