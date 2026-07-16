@@ -1,6 +1,7 @@
 import type {SanityClient} from 'sanity'
 
 import type {WorkflowTransitionStage} from '../types/transition'
+import {getCommentsDatasetName, warnMissingCommentsDataset} from './commentsDataset'
 import {stripDraftsPrefix} from './transition'
 
 export interface WorkflowStageGatingTask {
@@ -100,7 +101,7 @@ function getDocumentTasksForGatingTarget(
   }
 
   return {
-    addonClient: client.withConfig({dataset: `${mainDataset}-comments`}),
+    addonClient: client.withConfig({dataset: getCommentsDatasetName(mainDataset)}),
     cleanId,
   }
 }
@@ -211,6 +212,14 @@ export function subscribeWorkflowStageGating({
       }
     } catch (error) {
       if (!disposed) {
+        const mainDataset = client.config().dataset
+        if (mainDataset) {
+          warnMissingCommentsDataset({
+            error,
+            logPrefix: '[workflowStageGating]',
+            mainDataset,
+          })
+        }
         console.error('[workflowStageGating] Gate evaluation failed', {
           documentId,
           error,
@@ -327,7 +336,15 @@ export async function evaluateWorkflowStageGating({
       requiredTaskCount: requiredTasks.length,
       tasks: openRequiredTasks,
     }
-  } catch {
+  } catch (error) {
+    const mainDataset = client.config().dataset
+    if (mainDataset) {
+      warnMissingCommentsDataset({
+        error,
+        logPrefix: '[workflowStageGating]',
+        mainDataset,
+      })
+    }
     return {blocked: false, requiredOpenCount: 0, requiredTaskCount: 0, tasks: []}
   }
 }

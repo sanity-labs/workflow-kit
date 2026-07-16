@@ -7,6 +7,7 @@ import type {
   WorkflowTransitionDocument,
   WorkflowTransitionStage,
 } from '../types/transition'
+import {getCommentsDatasetName, warnMissingCommentsDataset} from './commentsDataset'
 import {workflowRoleSlugMatches} from './roleMatching'
 
 const workflowDefinitionPromiseCache = new Map<string, Promise<null | WorkflowDefinition>>()
@@ -149,7 +150,7 @@ export function shouldDeferTaskTemplateCreation({
 function getAddonCommentsClient(client: SanityClient) {
   const {dataset} = client.config()
   if (!dataset) return null
-  return client.withConfig({dataset: `${dataset}-comments`})
+  return client.withConfig({dataset: getCommentsDatasetName(dataset)})
 }
 
 export function buildStatusAuditEntry({
@@ -281,7 +282,7 @@ export async function createTasksForWorkflowTemplates({
     return emptyResult
   }
 
-  const addonClient = client.withConfig({dataset: `${mainDataset}-comments`})
+  const addonClient = client.withConfig({dataset: getCommentsDatasetName(mainDataset)})
 
   let existingTitles = new Set<string>()
   if (skipIfTasksExist && templates.length > 0) {
@@ -297,6 +298,7 @@ export async function createTasksForWorkflowTemplates({
           .filter((title): title is string => typeof title === 'string' && title.length > 0),
       )
     } catch (error) {
+      warnMissingCommentsDataset({error, logPrefix, mainDataset})
       console.error(`${logPrefix} Failed to check for existing workflow tasks:`, error)
     }
   }
@@ -374,6 +376,7 @@ export async function createTasksForWorkflowTemplates({
 
           return typeof task._id === 'string' ? task._id : undefined
         } catch (error) {
+          warnMissingCommentsDataset({error, logPrefix, mainDataset})
           console.error(`${logPrefix} Failed to create task "${template.title}":`, error)
           return undefined
         }
@@ -433,6 +436,10 @@ export async function assignOpenWorkflowTasksFromAssignments({
       {docId: cleanId, titles},
     )
   } catch (error) {
+    const mainDataset = client.config().dataset
+    if (mainDataset) {
+      warnMissingCommentsDataset({error, logPrefix, mainDataset})
+    }
     console.error(`${logPrefix} Failed to load open unassigned workflow tasks:`, error)
     return {assignedTaskIds: []}
   }
