@@ -12,8 +12,19 @@ interface WorkflowProjectUsersResult {
 const workflowProjectUsersPromiseCache = new Map<string, Promise<WorkflowProjectUsersResult>>()
 const workflowProjectUsersResultCache = new Map<string, WorkflowProjectUsersResult>()
 
-async function fetchWorkflowProjectUsers(projectId: string): Promise<WorkflowProjectUsersResult> {
-  const acl = await requestManagementApi<WorkflowProjectAclEntry[]>(`/projects/${projectId}/acl`)
+function getClientAuthToken(client: SanityClient): string | undefined {
+  const {token} = client.config()
+  return typeof token === 'string' && token.trim() ? token : undefined
+}
+
+async function fetchWorkflowProjectUsers(
+  projectId: string,
+  token?: string,
+): Promise<WorkflowProjectUsersResult> {
+  const acl = await requestManagementApi<WorkflowProjectAclEntry[]>(`/projects/${projectId}/acl`, {
+    projectId,
+    token,
+  })
   const nonRobotIds = acl.filter((entry) => !entry.isRobot).map((entry) => entry.projectUserId)
 
   if (nonRobotIds.length === 0) {
@@ -35,7 +46,10 @@ async function fetchWorkflowProjectUsers(projectId: string): Promise<WorkflowPro
         imageUrl?: string
         sanityUserId?: string
       }>
-    >(`/projects/${projectId}/users/${chunk.join(',')}`)
+    >(`/projects/${projectId}/users/${chunk.join(',')}`, {
+      projectId,
+      token,
+    })
 
     users = [
       ...users,
@@ -55,27 +69,31 @@ async function fetchWorkflowProjectUsers(projectId: string): Promise<WorkflowPro
   }
 }
 
-function getCachedWorkflowProjectUsers(projectId: string): Promise<WorkflowProjectUsersResult> {
-  const cachedResult = workflowProjectUsersResultCache.get(projectId)
+function getCachedWorkflowProjectUsers(
+  projectId: string,
+  token?: string,
+): Promise<WorkflowProjectUsersResult> {
+  const cacheKey = `${projectId}:${token ? 'token' : 'cookie'}`
+  const cachedResult = workflowProjectUsersResultCache.get(cacheKey)
   if (cachedResult) {
     return Promise.resolve(cachedResult)
   }
 
-  const cachedPromise = workflowProjectUsersPromiseCache.get(projectId)
+  const cachedPromise = workflowProjectUsersPromiseCache.get(cacheKey)
   if (cachedPromise) {
     return cachedPromise
   }
 
-  const request = fetchWorkflowProjectUsers(projectId)
+  const request = fetchWorkflowProjectUsers(projectId, token)
     .then((result) => {
-      workflowProjectUsersResultCache.set(projectId, result)
+      workflowProjectUsersResultCache.set(cacheKey, result)
       return result
     })
     .finally(() => {
-      workflowProjectUsersPromiseCache.delete(projectId)
+      workflowProjectUsersPromiseCache.delete(cacheKey)
     })
 
-  workflowProjectUsersPromiseCache.set(projectId, request)
+  workflowProjectUsersPromiseCache.set(cacheKey, request)
   return request
 }
 
@@ -84,6 +102,7 @@ export function useWorkflowProjectUsers(client: SanityClient) {
   const [projectUsers, setProjectUsers] = useState<WorkflowProjectUser[]>([])
   const [loaded, setLoaded] = useState(false)
   const {projectId} = client.config()
+  const authToken = getClientAuthToken(client)
 
   useEffect(() => {
     if (!projectId) {
@@ -96,7 +115,7 @@ export function useWorkflowProjectUsers(client: SanityClient) {
     let cancelled = false
     setLoaded(false)
 
-    void getCachedWorkflowProjectUsers(projectId)
+    void getCachedWorkflowProjectUsers(projectId, authToken)
       .then((result) => {
         if (cancelled) return
         setAclData(result.aclData)
@@ -113,7 +132,7 @@ export function useWorkflowProjectUsers(client: SanityClient) {
     return () => {
       cancelled = true
     }
-  }, [projectId])
+  }, [authToken, projectId])
 
   return {aclData, loaded, projectUsers}
 }

@@ -53,5 +53,6 @@ export interface WorkflowDefinition {
 export interface WorkflowTransitionDocument {
   assignments?: WorkflowAssignmentValue[]
   pendingTransitionReason?: string
+  status?: string
   statuses?: Array<{completedAt?: string; statusSlug?: string}>
 }
