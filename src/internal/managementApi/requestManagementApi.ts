@@ -100,10 +100,12 @@ function readStoredStudioAuthToken(projectId: string): string | undefined {
  * only allows cookie auth from localhost / manage.sanity.io. Bearer tokens work
  * from `*.sanity.studio`.
  */
-export function resolveStudioAuthToken(options: {
-  projectId?: string
-  token?: (() => null | string | undefined) | null | string | undefined
-} = {}): string | undefined {
+export function resolveStudioAuthToken(
+  options: {
+    projectId?: string
+    token?: (() => null | string | undefined) | null | string | undefined
+  } = {},
+): string | undefined {
   const explicit = normalizeAuthToken(options.token)
   if (explicit) return explicit
 
