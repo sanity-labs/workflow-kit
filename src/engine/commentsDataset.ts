@@ -8,10 +8,7 @@ export function getCommentsDatasetName(mainDataset: string): string {
  * Detect Sanity API failures that mean the `<dataset>-comments` addon dataset
  * has not been created yet.
  */
-export function isMissingCommentsDatasetError(
-  error: unknown,
-  commentsDataset?: string,
-): boolean {
+export function isMissingCommentsDatasetError(error: unknown, commentsDataset?: string): boolean {
   const statusCode =
     typeof error === 'object' && error !== null && 'statusCode' in error
       ? Number((error as {statusCode?: unknown}).statusCode)

@@ -23,9 +23,9 @@ describe('isMissingCommentsDatasetError', () => {
   })
 
   it('detects message-only missing dataset errors', () => {
-    expect(
-      isMissingCommentsDatasetError(new Error('Unknown dataset production-comments')),
-    ).toBe(true)
+    expect(isMissingCommentsDatasetError(new Error('Unknown dataset production-comments'))).toBe(
+      true,
+    )
   })
 
   it('ignores unrelated failures', () => {
