@@ -79,10 +79,10 @@ export function WorkflowTransitionConfirmDialogContent({
   )
 
   return (
-    <Stack paddingX={4} paddingBottom={4} paddingTop={2} space={4}>
+    <Stack paddingX={4} paddingBottom={4} paddingTop={2} gap={4}>
       {!hasSupportingContent && (
         <Card padding={4} border tone="positive" radius={2}>
-          <Stack space={3}>
+          <Stack gap={3}>
             <Heading size={1}>All required tasks are complete</Heading>
             <Text size={1}>Ready to move to {stageTitle}.</Text>
           </Stack>
@@ -100,7 +100,7 @@ export function WorkflowTransitionConfirmDialogContent({
         <>
           <Heading size={1}>Tasks That Will Be Created</Heading>
 
-          <Stack space={3}>
+          <Stack gap={3}>
             {taskTemplates.map((template, index) => {
               const selectedId = assigneeOverrides.has(index)
                 ? assigneeOverrides.get(index)
@@ -123,7 +123,7 @@ export function WorkflowTransitionConfirmDialogContent({
             })}
           </Stack>
 
-          <Stack space={2}>
+          <Stack gap={2}>
             <Label size={1}>Add a note for assignees (optional)</Label>
             <TextArea
               onChange={(event) => setNoteText(event.currentTarget.value)}

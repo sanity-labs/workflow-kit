@@ -1,4 +1,4 @@
-import {useToast} from '@sanity/ui'
+import {useToast} from '@sanity/ui/toast'
 import type {LucideIcon} from 'lucide-react'
 import {useCallback, useEffect, useMemo, useState} from 'react'
 import type {StringInputProps, StringOptions, StringSchemaType} from 'sanity'

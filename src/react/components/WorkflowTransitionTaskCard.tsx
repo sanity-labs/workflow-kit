@@ -1,4 +1,5 @@
-import {Avatar, Box, Button, Card, Checkbox, Flex, Stack, Text, Tooltip} from '@sanity/ui'
+import {Avatar, Box, Button, Card, Checkbox, Flex, Stack, Text} from '@sanity/ui'
+import {Tooltip} from '@sanity/ui/tooltip'
 import {CheckSquare2, Clock3, type LucideIcon} from 'lucide-react'
 import type {ReactNode} from 'react'
 
@@ -84,7 +85,7 @@ function WorkflowTransitionTaskCard({
         </Box>
       </Box>
 
-      <Stack space={2} flex={1}>
+      <Stack gap={2} flex={1}>
         <Text size={2} weight="medium">
           {title || 'Untitled task'}
         </Text>
@@ -197,7 +198,6 @@ export function WorkflowTransitionTaskTemplateRow({
             <Tooltip
               key={user.id}
               animate
-              delay={300}
               content={
                 <Box padding={1}>
                   <Text size={1}>
@@ -207,6 +207,7 @@ export function WorkflowTransitionTaskTemplateRow({
                   </Text>
                 </Box>
               }
+              delay={300}
               placement="bottom"
               portal
             >

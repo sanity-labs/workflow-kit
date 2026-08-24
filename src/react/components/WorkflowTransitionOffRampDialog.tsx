@@ -44,12 +44,12 @@ export function WorkflowTransitionOffRampDialogContent({
   }, [stageTitle, unpublishOnEntry, criteria])
 
   return (
-    <Stack padding={4} space={4}>
+    <Stack padding={4} gap={4}>
       {unpublishOnEntry && (
         <Card padding={3} radius={2} tone="critical">
           <Flex gap={2} align="flex-start">
             <Text size={1}>!</Text>
-            <Stack space={2}>
+            <Stack gap={2}>
               <Text size={1} weight="semibold">
                 This will unpublish the document.
               </Text>
@@ -67,7 +67,7 @@ export function WorkflowTransitionOffRampDialogContent({
         </Box>
       )}
 
-      <Stack space={2}>
+      <Stack gap={2}>
         <Text size={1} weight="semibold">
           Reason <span style={{color: 'var(--card-badge-critical-bg-color, red)'}}>*</span>
         </Text>

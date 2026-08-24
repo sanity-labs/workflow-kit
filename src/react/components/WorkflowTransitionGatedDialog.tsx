@@ -83,14 +83,14 @@ export function WorkflowTransitionGatedDialogContent({
   const resolvedSubmittingText = submittingText ?? `Moving to ${targetStageTitle}...`
 
   return (
-    <Stack padding={4} space={4}>
+    <Stack padding={4} gap={4}>
       {allTasksClosed ? (
         <Card padding={3} radius={2} border tone="positive">
           All tasks completed for {sourceStageName} stage. Ready to advance.
         </Card>
       ) : currentUserCanOverride ? (
         <Card padding={3} radius={2} border tone="suggest">
-          <Stack space={3}>
+          <Stack gap={3}>
             <Heading size={1}>
               {remainingTaskCount} required task
               {remainingTaskCount === 1 ? '' : 's'} still incomplete for {sourceStageName} stage
@@ -100,7 +100,7 @@ export function WorkflowTransitionGatedDialogContent({
         </Card>
       ) : (
         <Card padding={3} radius={2} border tone="caution">
-          <Stack space={3}>
+          <Stack gap={3}>
             <Heading size={1}>
               {remainingTaskCount} required task
               {remainingTaskCount === 1 ? '' : 's'} still incomplete for {sourceStageName} stage
@@ -118,7 +118,7 @@ export function WorkflowTransitionGatedDialogContent({
         </Card>
       )}
 
-      <Stack space={2}>
+      <Stack gap={2}>
         {visibleTasks.map((task) => {
           const assignee = users.find((user) => user.id === task.assignedTo)
 
