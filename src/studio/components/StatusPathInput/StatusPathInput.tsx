@@ -1,4 +1,4 @@
-import {useToast} from '@sanity/ui'
+import {Card, Text} from '@sanity/ui'
 import type {LucideIcon} from 'lucide-react'
 import {useCallback, useEffect, useMemo, useState} from 'react'
 import type {StringInputProps, StringOptions, StringSchemaType} from 'sanity'
@@ -98,7 +98,6 @@ export function StatusPathInput(props: StringInputProps<StatusPathSchemaType>) {
   const client = useClient({apiVersion: DEFAULT_API_VERSION})
   const currentUser = useCurrentUser()
   const router = useRouter()
-  const toast = useToast()
   const documentId = useFormValue(['_id']) as string | undefined
   const documentType = useFormValue(['_type']) as string | undefined
   const publishedDocumentId = documentId ? stripDraftsPrefix(documentId) : ''
@@ -129,6 +128,7 @@ export function StatusPathInput(props: StringInputProps<StatusPathSchemaType>) {
   const [gatedStageName, setGatedStageName] = useState('')
   const [gatingStage, setGatingStage] = useState<null | WorkflowTransitionStage>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
+  const [accessWarning, setAccessWarning] = useState<string | null>(null)
 
   useEffect(() => {
     if (!workflowDocumentType) {
@@ -422,21 +422,20 @@ export function StatusPathInput(props: StringInputProps<StatusPathSchemaType>) {
       })
 
       if (!canUseOffRamp) {
-        toast.push({
-          description: getOffRampDisabledTitle({
+        setAccessWarning(
+          getOffRampDisabledTitle({
             allowedRoles: stage.allowedRoles,
             workflowRoles: workflow?.roles,
           }),
-          status: 'warning',
-          title: 'Workflow access required',
-        })
+        )
         return
       }
 
+      setAccessWarning(null)
       setPendingStage(stage)
       setModalType('offramp')
     },
-    [aclData, canEditStatus, currentUser, projectUsers, toast, workflow?.roles],
+    [aclData, canEditStatus, currentUser, projectUsers, workflow?.roles],
   )
 
   const handleConfirmDialogConfirm = useCallback(
@@ -496,6 +495,14 @@ export function StatusPathInput(props: StringInputProps<StatusPathSchemaType>) {
 
   return (
     <>
+      {accessWarning ? (
+        <Card border padding={3} radius={2} tone="caution">
+          <Text size={1} weight="medium">
+            {accessWarning}
+          </Text>
+        </Card>
+      ) : null}
+
       <WorkflowStatusPath
         currentStatus={value}
         disabled={!canEditStatus}

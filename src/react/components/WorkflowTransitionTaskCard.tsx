@@ -1,4 +1,4 @@
-import {Avatar, Box, Button, Card, Checkbox, Flex, Stack, Text, Tooltip} from '@sanity/ui'
+import {Avatar, Box, Button, Card, Checkbox, Flex, Stack, Text} from '@sanity/ui'
 import {CheckSquare2, Clock3, type LucideIcon} from 'lucide-react'
 import type {ReactNode} from 'react'
 
@@ -84,7 +84,7 @@ function WorkflowTransitionTaskCard({
         </Box>
       </Box>
 
-      <Stack space={2} flex={1}>
+      <Stack gap={2} flex={1}>
         <Text size={2} weight="medium">
           {title || 'Untitled task'}
         </Text>
@@ -120,27 +120,17 @@ function WorkflowTransitionTaskCard({
 
 function WorkflowTransitionDueInDaysBadge({dueInDays}: {dueInDays: number}) {
   return (
-    <Tooltip
-      animate
-      content={
-        <Box padding={1}>
-          <Text size={1}>
-            Task will be created with a due date of{' '}
-            {new Date(Date.now() + dueInDays * 24 * 60 * 60 * 1000).toLocaleDateString()}
-          </Text>
-        </Box>
-      }
-      placement="bottom"
-      portal
+    <Box
+      title={`Task will be created with a due date of ${new Date(
+        Date.now() + dueInDays * 24 * 60 * 60 * 1000,
+      ).toLocaleDateString()}`}
     >
-      <Box>
-        <IconPill
-          Icon={Clock3}
-          label={`${dueInDays} day${dueInDays === 1 ? '' : 's'}`}
-          tone="primary"
-        />
-      </Box>
-    </Tooltip>
+      <IconPill
+        Icon={Clock3}
+        label={`${dueInDays} day${dueInDays === 1 ? '' : 's'}`}
+        tone="primary"
+      />
+    </Box>
   )
 }
 
@@ -194,37 +184,26 @@ export function WorkflowTransitionTaskTemplateRow({
           </Text>
         ) : (
           template.eligibleUsers.map((user) => (
-            <Tooltip
+            <Button
               key={user.id}
-              animate
-              delay={300}
-              content={
-                <Box padding={1}>
-                  <Text size={1}>
-                    {selectedAssigneeId === user.id
-                      ? `Will be assigned to ${user.displayName ?? 'this user'}`
-                      : `Assign this task to ${user.displayName ?? 'this user'}`}
-                  </Text>
-                </Box>
+              fontSize={1}
+              onClick={() => onSelectAssignee(user.id)}
+              padding={1}
+              style={{borderRadius: '9999px'}}
+              title={
+                selectedAssigneeId === user.id
+                  ? `Will be assigned to ${user.displayName ?? 'this user'}`
+                  : `Assign this task to ${user.displayName ?? 'this user'}`
               }
-              placement="bottom"
-              portal
+              tone={selectedAssigneeId === user.id ? 'primary' : 'neutral'}
             >
-              <Button
-                fontSize={1}
-                onClick={() => onSelectAssignee(user.id)}
-                padding={1}
-                style={{borderRadius: '9999px'}}
-                tone={selectedAssigneeId === user.id ? 'primary' : 'neutral'}
-              >
-                <Flex gap={1} align="center">
-                  <Avatar src={user.imageUrl} size={0} style={{borderRadius: '9999px'}} />
-                  <Text size={1} style={{paddingInlineEnd: '0.5em'}}>
-                    {user.displayName || 'Unknown'}
-                  </Text>
-                </Flex>
-              </Button>
-            </Tooltip>
+              <Flex gap={1} align="center">
+                <Avatar src={user.imageUrl} size={0} style={{borderRadius: '9999px'}} />
+                <Text size={1} style={{paddingInlineEnd: '0.5em'}}>
+                  {user.displayName || 'Unknown'}
+                </Text>
+              </Flex>
+            </Button>
           ))
         )}
       </Flex>
