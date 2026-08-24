@@ -39,7 +39,7 @@ The plugin and the kit share their type definitions — nothing gets lost when y
 pnpm add @sanity-labs/workflow-kit
 ```
 
-Peer dependencies: `sanity@>=5 <7`, `react@^19`, `@sanity/ui@^3.1.11 || ^4`, `styled-components@^6`.
+Peer dependencies: `sanity@>=5 <7`, `react@^19`, `@sanity/ui@^4`, `styled-components@^6`.
 
 Sanity Studio 5 and 6 are covered by clean consumer builds. Use Node.js 20.19 or newer
 for Studio 5. Studio 6 itself requires Node.js 22.12 or newer.
@@ -174,8 +174,8 @@ If the addon dataset was never initialised, open Studio, open any document, and 
 
 **Peer-dep mismatch on install.**
 
-`workflow-kit` supports React 19, Sanity Studio 5 or 6, `@sanity/ui` 3 or 4, and
-`styled-components` 6. Using Sanity 4 or React 18 is not supported.
+`workflow-kit` supports React 19, Sanity Studio 5 or 6, `@sanity/ui` 4, and
+`styled-components` 6. Using Sanity 4, React 18, or `@sanity/ui` 3 is not supported.
 
 **Role matching is returning unexpected results.**
 

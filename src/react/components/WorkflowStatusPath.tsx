@@ -1,4 +1,5 @@
 import {Box, Button, Flex, Skeleton, Stack, Text} from '@sanity/ui'
+import {Tooltip} from '@sanity/ui/tooltip'
 import {Check} from 'lucide-react'
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import styled, {css, keyframes} from 'styled-components'
@@ -465,48 +466,57 @@ export function WorkflowStatusPath({
                 ) : null
 
               return (
-                <ChevronSegment
+                <Tooltip
                   key={stage.slug || `${title}-${index}`}
-                  $bgColor={color}
-                  $compact={compact}
-                  $disabled={isForwardOnlyDisabled}
-                  $isFirst={index === 0}
-                  $isLast={index === stageDisplays.length - 1}
-                  $state={state}
-                  disabled={isForwardOnlyDisabled}
-                  onClick={() => {
-                    if (!stage.slug || !onSelectStage || isForwardOnlyDisabled) return
-                    onSelectStage(stage)
-                  }}
-                  ref={(element) => {
-                    stageSegmentRefs.current[index] = element
-                  }}
-                  title={
-                    isForwardOnlyDisabled && workflow.forwardOnly && state === 'completed'
-                      ? 'This workflow only allows forward progression'
-                      : `Move to ${title}`
-                  }
-                  type="button"
-                >
-                  <IconCircle $color={color} $state={state}>
-                    {displayIcon}
-                  </IconCircle>
-                  <TruncatedLabel $compact={compact}>
-                    <Text
-                      size={1}
-                      weight={state === 'current' ? 'bold' : 'regular'}
-                      style={{
-                        color:
-                          state === 'future'
-                            ? 'var(--card-muted-fg-color, var(--card-fg-color, #666))'
-                            : 'white',
-                        lineHeight: 4,
-                      }}
-                    >
-                      {title}
+                  animate
+                  content={
+                    <Text size={1}>
+                      {isForwardOnlyDisabled && workflow.forwardOnly && state === 'completed'
+                        ? 'This workflow only allows forward progression'
+                        : `Move to ${title}`}
                     </Text>
-                  </TruncatedLabel>
-                </ChevronSegment>
+                  }
+                  delay={300}
+                  placement="bottom"
+                  portal
+                >
+                  <ChevronSegment
+                    $bgColor={color}
+                    $compact={compact}
+                    $disabled={isForwardOnlyDisabled}
+                    $isFirst={index === 0}
+                    $isLast={index === stageDisplays.length - 1}
+                    $state={state}
+                    disabled={isForwardOnlyDisabled}
+                    onClick={() => {
+                      if (!stage.slug || !onSelectStage || isForwardOnlyDisabled) return
+                      onSelectStage(stage)
+                    }}
+                    ref={(element) => {
+                      stageSegmentRefs.current[index] = element
+                    }}
+                    type="button"
+                  >
+                    <IconCircle $color={color} $state={state}>
+                      {displayIcon}
+                    </IconCircle>
+                    <TruncatedLabel $compact={compact}>
+                      <Text
+                        size={1}
+                        weight={state === 'current' ? 'bold' : 'regular'}
+                        style={{
+                          color:
+                            state === 'future'
+                              ? 'var(--card-muted-fg-color, var(--card-fg-color, #666))'
+                              : 'white',
+                          lineHeight: 4,
+                        }}
+                      >
+                        {title}
+                      </Text>
+                    </TruncatedLabel>
+                  </ChevronSegment>
+                </Tooltip>
               )
             })}
           </Flex>
