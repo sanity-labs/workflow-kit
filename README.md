@@ -39,10 +39,18 @@ The plugin and the kit share their type definitions — nothing gets lost when y
 pnpm add @sanity-labs/workflow-kit
 ```
 
-Peer dependencies: `sanity@>=5 <7`, `react@^19`, `@sanity/ui@^4`, `styled-components@^6`.
+Peer dependencies: `sanity@^6.9.2`, `react@^19`, `@sanity/ui@^4.0.1`,
+`styled-components@^6`.
 
-Sanity Studio 5 and 6 are covered by clean consumer builds. Use Node.js 20.19 or newer
-for Studio 5. Studio 6 itself requires Node.js 22.12 or newer.
+This release line supports Sanity Studio 6.9.2 and later 6.x releases. Use Node.js
+22.12 or newer.
+
+For Sanity Studio 5, use `@sanity-labs/workflow-kit@^0.5.1` with `@sanity/ui` 3.
+The 0.5.x line may run on Sanity 6.0–6.9.1 when its peer declarations are
+overridden, but that combination is not supported or covered by clean consumer
+builds. Upgrade Studio to 6.9.2 or later instead. The workflows plugin README
+documents a temporary, unsupported override approach for teams that cannot
+upgrade immediately.
 
 ---
 
@@ -174,8 +182,10 @@ If the addon dataset was never initialised, open Studio, open any document, and 
 
 **Peer-dep mismatch on install.**
 
-`workflow-kit` supports React 19, Sanity Studio 5 or 6, `@sanity/ui` 4, and
-`styled-components` 6. Using Sanity 4, React 18, or `@sanity/ui` 3 is not supported.
+`workflow-kit` 0.6.x supports React 19, Sanity Studio 6.9.2 or later in the 6.x
+line, `@sanity/ui` 4.0.1 or later, and `styled-components` 6. For Studio 5,
+install `workflow-kit@^0.5.1` and UI 3. Sanity 6.0–6.9.1 is not formally
+supported by either release line.
 
 **Role matching is returning unexpected results.**
 
@@ -194,8 +204,9 @@ pnpm lint
 pnpm smoke:compat   # build the packed package in a clean Studio
 ```
 
-Publish workflow-kit before packages that consume its new compatibility range. Its CI
-matrix builds packed consumers with Studio 5, Studio 6.2, and current Studio 6/UI 4.
+Publish workflow-kit before packages that consume its new compatibility range.
+Its CI matrix builds packed consumers at the Studio 6.9.2/UI 4.0.1 minimum and
+against the current Studio 6/UI 4 release.
 
 ## License
 

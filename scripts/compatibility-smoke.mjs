@@ -5,8 +5,8 @@ import {dirname, join} from 'node:path'
 import {fileURLToPath} from 'node:url'
 
 const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)))
-const sanityVersion = process.env.SANITY_VERSION || '^6.0.0'
-const sanityUiVersion = process.env.SANITY_UI_VERSION || '^4.0.0'
+const sanityVersion = process.env.SANITY_VERSION || '^6.9.2'
+const sanityUiVersion = process.env.SANITY_UI_VERSION || '^4.0.1'
 const smokeRoot = mkdtempSync(join(tmpdir(), 'workflow-kit-smoke-'))
 
 function run(command, args, cwd) {

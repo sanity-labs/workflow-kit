@@ -2,6 +2,6 @@
 "@sanity-labs/workflow-kit": minor
 ---
 
-Add declared and tested support for Sanity Studio 6 while retaining Studio 5 compatibility. Workflow UI now uses the official UI 4 tooltip and toast entrypoints, and CI builds packed consumers against Studio 5, Studio 6.2, and the current Studio 6 release.
+Add declared and tested support for Sanity Studio 6.9.2 and later 6.x releases. Workflow UI now uses the official UI 4 tooltip and toast entrypoints, and CI builds packed consumers at the Studio 6.9.2/UI 4.0.1 minimum and against the current Studio 6 release.
 
-**Breaking:** `@sanity/ui` 4 is now required. Upgrade consumers from UI 3 to `@sanity/ui@^4` before installing this release.
+**Breaking:** Sanity `^6.9.2` and `@sanity/ui@^4.0.1` are now required. Sanity 5 consumers should remain on `workflow-kit@^0.5.1`. Sanity 6.0–6.9.1 is not formally supported; upgrade Studio before installing this release.
