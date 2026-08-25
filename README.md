@@ -1,7 +1,7 @@
 # @sanity-labs/workflow-kit
 
 > [!IMPORTANT]
-> This package was created before Sanity's official [Editorial Workflows](https://www.sanity.io/docs/editorial-workflows) feature was available in public beta.
+> This package was created before Sanity's official [Workflows](https://www.sanity.io/docs/editorial-workflows) feature was available in public beta.
 > I _strongly_ recommend using that rather than this package (and the workflows plugin built on it) as it will be officially supported by the Sanity team.
 > Once Editorial Workflows goes GA, this package will go into maintenance mode.
 > — Sam
